@@ -5564,87 +5564,31 @@ class EmbeddedFileExtractor:
                                 row = int(r.text) + 1
 
                         embed_name = shapeid_to_embed[shape_id_found]
-                        filename_to_position[embed_name] = (sheet_idx, col, row)
+                        filename_to_position[embed_name] = {
+                            'sheet_idx': sheet_idx,
+                            'shape_id': shape_id_found,
+                            'drawing_path': drawing_path,
+                            'col': col,
+                            'row': row,
+                        }
                         self.log(f"    📍 {embed_name} → sheet{sheet_idx} "
                                  f"col={col} row={row}")
 
             self.log(f"  ✅ {len(filename_to_position)} position(s) OLE découverte(s)")
 
-            original_ext = original_path.suffix.lower()
-
-            if original_ext == '.xlsm':
-                # ============================================================
-                # XLSM : manipulation ZIP directe (préserve intégrité VBA)
-                # ============================================================
-                # openpyxl, même avec keep_vba=True, réécrit styles/formules
-                # et altère légèrement le fichier. Pour les classeurs avec
-                # macros, on conserve l'archive d'origine telle quelle et on
-                # ne touche QUE aux parts OLE + on insère le texte directement
-                # comme inline string dans le worksheet XML.
-                modifications_applied = self._modify_xlsm_via_zip(
-                    original_path, modified_path,
-                    extracted_files, filename_to_position
-                )
-            else:
-                # ============================================================
-                # XLSX : openpyxl (fichier propre, valide)
-                # ============================================================
-                wb = openpyxl.load_workbook(str(original_path))
-
-                for ws in wb.worksheets:
-                    if hasattr(ws, '_oleObjects'):
-                        try:
-                            ws._oleObjects = []
-                        except Exception:
-                            pass
-                    if hasattr(ws, 'legacy_drawing'):
-                        try:
-                            ws.legacy_drawing = None
-                        except Exception:
-                            pass
-
-                self.log(f"\n  🔧 INSERTION DES TEXTES DE REMPLACEMENT...")
-                modifications_applied = 0
-
-                for item in extracted_files:
-                    if item['action'] != 'replace':
-                        continue
-                    filename = item.get('filename')
-                    extracted_name = item.get('extracted_name', '')
-                    if not filename:
-                        continue
-                    if filename not in filename_to_position:
-                        self.log(f"    ⚠️ Position introuvable : {filename}")
-                        continue
-
-                    sheet_idx, col, row = filename_to_position[filename]
-                    if sheet_idx < 1 or sheet_idx > len(wb.worksheets):
-                        self.log(f"    ⚠️ Index de feuille invalide pour {filename}")
-                        continue
-
-                    ws = wb.worksheets[sheet_idx - 1]
-                    display = (Path(extracted_name).stem if extracted_name
-                               else Path(filename).stem)
-
-                    # Si la cellule cible fait partie d'une plage fusionnée,
-                    # openpyxl n'autorise l'écriture que sur la cellule
-                    # ancre (haut-gauche) de la fusion — les autres cellules
-                    # ("MergedCell") sont en lecture seule et lèvent
-                    # AttributeError si on tente d'y écrire directement.
-                    target_row, target_col = row, col
-                    for merged_range in ws.merged_cells.ranges:
-                        if (merged_range.min_row <= row <= merged_range.max_row and
-                                merged_range.min_col <= col <= merged_range.max_col):
-                            target_row, target_col = merged_range.min_row, merged_range.min_col
-                            break
-
-                    cell = ws.cell(row=target_row, column=target_col)
-                    cell.value = f"Voir {display}"
-                    cell.font = Font(bold=True, color='FF0000', size=12)
-                    self.log(f"    ✅ {ws.title}!{cell.coordinate} → Voir {display}")
-                    modifications_applied += 1
-
-                wb.save(str(modified_path))
+            # ============================================================
+            # XLSX ET XLSM : manipulation ZIP directe (préserve intégrité
+            # VBA / styles / formules — openpyxl réécrit et altère
+            # légèrement le fichier, y compris hors macros).
+            # L'objet OLE est remplacé par une FORME transparente contenant
+            # le texte "Voir ..." insérée EXACTEMENT à la même position
+            # (mêmes ancres from/to) que l'objet incorporé d'origine — donc
+            # aucune écriture dans une cellule, qu'elle soit fusionnée ou non.
+            # ============================================================
+            modifications_applied = self._modify_xlsx_via_zip(
+                original_path, modified_path,
+                extracted_files, filename_to_position
+            )
 
             self.log(f"\n  ✅ Excel modifié : {modified_path.name}")
             self.log(f"  ✅ {modifications_applied} objet(s) OLE remplacé(s) par texte")
@@ -5670,15 +5614,18 @@ class EmbeddedFileExtractor:
             letters = chr(65 + rem) + letters
         return letters
 
-    def _modify_xlsm_via_zip(self, original_path, modified_path,
-                             extracted_files, filename_to_position):
+    def _modify_xlsx_via_zip(self, original_path, modified_path,
+                              extracted_files, filename_to_position):
         """
-        Modifie un XLSM par manipulation ZIP directe :
+        Modifie un XLSX/XLSM par manipulation ZIP directe :
         - Préserve l'archive d'origine VERBATIM (VBA, styles, formules, etc.)
-        - Retire UNIQUEMENT les parts OLE (oleObjects, legacyDrawing,
-          embeddings, VML d'icônes)
-        - Insère "Voir [filename]" comme inline string dans les cellules cibles
-          avec un style rouge gras 12pt ajouté à styles.xml
+        - Retire les parts OLE (oleObjects, legacyDrawing, embeddings,
+          VML d'icônes) ainsi que l'ancre DrawingML de l'objet incorporé
+        - Insère à sa place une FORME transparente (sans remplissage, sans
+          bordure) contenant "Voir [filename]" en rouge gras, positionnée
+          EXACTEMENT à la même ancre (from/to) que l'objet OLE d'origine —
+          aucune cellule n'est modifiée, donc aucun souci avec les cellules
+          fusionnées.
         Retourne le nombre de modifications appliquées.
         """
         from lxml import etree as _et
@@ -5689,8 +5636,9 @@ class EmbeddedFileExtractor:
                   '/package/2006/relationships')
         ns_ct = ('http://schemas.openxmlformats.org'
                  '/package/2006/content-types')
-        ns_main = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main'
-        ns_m = f'{{{ns_main}}}'
+        ns_xdr = ('http://schemas.openxmlformats.org'
+                  '/drawingml/2006/spreadsheetDrawing')
+        ns_a = 'http://schemas.openxmlformats.org/drawingml/2006/main'
 
         modifications_applied = 0
 
@@ -5699,12 +5647,8 @@ class EmbeddedFileExtractor:
             with zipfile.ZipFile(original_path, 'r') as zf:
                 zf.extractall(tp)
 
-            # ── 1. Ajouter un style "rouge gras 12pt" à styles.xml ────
-            style_id = self._add_red_bold_style(tp / 'xl' / 'styles.xml',
-                                                ns_main)
-
-            # ── 2. Construire sheet_idx → [(col, row, text), ...] ─────
-            position_to_text = {}
+            # ── 1. Grouper les remplacements par fichier drawing ──────
+            drawing_to_replacements = {}
             for item in extracted_files:
                 if item['action'] != 'replace':
                     continue
@@ -5714,24 +5658,24 @@ class EmbeddedFileExtractor:
                     if fn:
                         self.log(f"    ⚠️ Position introuvable : {fn}")
                     continue
-                sheet_idx, col, row = filename_to_position[fn]
-                display = (Path(ext).stem if ext
-                           else Path(fn).stem)
-                position_to_text.setdefault(sheet_idx, []).append(
-                    (col, row, f"Voir {display}"))
+                pos = filename_to_position[fn]
+                display = (Path(ext).stem if ext else Path(fn).stem)
+                drawing_path = pos.get('drawing_path')
+                if not drawing_path:
+                    self.log(f"    ⚠️ Pas de drawing associé : {fn}")
+                    continue
+                drawing_to_replacements.setdefault(drawing_path, []).append(
+                    (pos['shape_id'], f"Voir {display}",
+                     pos['sheet_idx'], pos['col'], pos['row'])
+                )
 
-            # ── 3. Pour chaque worksheet : retirer OLE + insérer texte ─
+            # ── 2. Retirer oleObjects / legacyDrawing des worksheets ──
             deleted_parts = []
             vml_files_to_delete = set()
             ws_dir = tp / 'xl' / 'worksheets'
 
             if ws_dir.exists():
                 for ws_file in ws_dir.glob('sheet*.xml'):
-                    try:
-                        sheet_idx = int(ws_file.stem.replace('sheet', ''))
-                    except ValueError:
-                        continue
-
                     try:
                         tree = _et.parse(str(ws_file))
                         root = tree.getroot()
@@ -5756,23 +5700,39 @@ class EmbeddedFileExtractor:
                                         parent.remove(child)
                                         changed = True
 
-                        # Insérer le texte dans les cellules
-                        for (col, row, text) in position_to_text.get(
-                                sheet_idx, []):
-                            if self._set_inline_string(
-                                    root, ns_m, col, row, text, style_id):
-                                modifications_applied += 1
-                                changed = True
-                                self.log(f"    ✅ sheet{sheet_idx} "
-                                         f"{self._col_letter(col)}{row} "
-                                         f"→ {text}")
-
                         if changed:
                             tree.write(str(ws_file),
                                        encoding='UTF-8',
                                        xml_declaration=True)
                     except Exception as e:
                         self.log(f"    ⚠️ {ws_file.name}: {e}")
+
+            # ── 3. Remplacer l'ancre OLE par une forme texte, par drawing ─
+            for drawing_path, replacements in drawing_to_replacements.items():
+                dp = tp / drawing_path
+                if not dp.exists():
+                    self.log(f"    ⚠️ Drawing introuvable : {drawing_path}")
+                    continue
+                try:
+                    tree = _et.parse(str(dp))
+                    root = tree.getroot()
+                    changed = False
+
+                    for shape_id, text, sheet_idx, col, row in replacements:
+                        if self._replace_ole_anchor_with_textbox(
+                                root, ns_xdr, ns_a, shape_id, text):
+                            modifications_applied += 1
+                            changed = True
+                            self.log(f"    ✅ sheet{sheet_idx} "
+                                     f"{self._col_letter(col)}{row} "
+                                     f"→ {text} (forme, position d'origine)")
+                        else:
+                            self.log(f"    ⚠️ Ancre introuvable pour shapeId={shape_id}")
+
+                    if changed:
+                        tree.write(str(dp), encoding='UTF-8', xml_declaration=True)
+                except Exception as e:
+                    self.log(f"    ⚠️ {drawing_path}: {e}")
 
             # ── 4. Nettoyer les sheet rels (embeddings + vmlDrawing) ──
             rels_dir = ws_dir / '_rels' if ws_dir.exists() else None
@@ -5881,111 +5841,107 @@ class EmbeddedFileExtractor:
 
         return modifications_applied
 
-    def _add_red_bold_style(self, styles_path, ns_main):
+    def _replace_ole_anchor_with_textbox(self, drawing_root, ns_xdr, ns_a,
+                                          shape_id, text):
         """
-        Ajoute une police rouge gras 12pt + un cellXfs à styles.xml.
-        Retourne l'index du cellXfs (à utiliser comme attribut s="N").
-        Renvoie None si styles.xml introuvable.
+        Cherche, dans drawing_root (xl/drawings/drawingN.xml), l'ancre
+        (twoCellAnchor/oneCellAnchor) qui contient le cNvPr d'id `shape_id`
+        (l'objet OLE incorporé), la retire et insère à la même place une
+        ancre IDENTIQUE en position (mêmes from/to, ou from/ext) mais
+        contenant une forme texte transparente (sans remplissage, sans
+        bordure) affichant `text` en rouge gras — au lieu de l'objet OLE.
+        La position/taille exacte de l'objet d'origine est donc conservée.
+        Retourne True si une ancre a été remplacée.
         """
+        import copy
         from lxml import etree as _et
-        if not styles_path.exists():
-            return None
-        try:
-            tree = _et.parse(str(styles_path))
-            root = tree.getroot()
-            ns = f'{{{ns_main}}}'
+        ns = f'{{{ns_xdr}}}'
+        nsa = f'{{{ns_a}}}'
 
-            fonts = root.find(f'{ns}fonts')
-            cellXfs = root.find(f'{ns}cellXfs')
-            if fonts is None or cellXfs is None:
-                return None
+        target_anchor = None
+        for anchor in list(drawing_root):
+            tag = anchor.tag.split('}')[-1] if '}' in anchor.tag else anchor.tag
+            if tag not in ('twoCellAnchor', 'oneCellAnchor'):
+                continue
+            for cnv in anchor.iter(f'{ns}cNvPr'):
+                if cnv.get('id') == str(shape_id):
+                    target_anchor = anchor
+                    break
+            if target_anchor is not None:
+                break
 
-            # Ajouter <font>
-            font = _et.SubElement(fonts, f'{ns}font')
-            b = _et.SubElement(font, f'{ns}b')
-            sz = _et.SubElement(font, f'{ns}sz')
-            sz.set('val', '12')
-            color = _et.SubElement(font, f'{ns}color')
-            color.set('rgb', 'FFFF0000')
-            name = _et.SubElement(font, f'{ns}name')
-            name.set('val', 'Calibri')
-            font_id = len(fonts.findall(f'{ns}font')) - 1
-            try:
-                fonts.set('count', str(int(fonts.get('count', '0')) + 1))
-            except ValueError:
-                fonts.set('count', str(font_id + 1))
-
-            # Ajouter <xf> dans cellXfs
-            xf = _et.SubElement(cellXfs, f'{ns}xf')
-            xf.set('numFmtId', '0')
-            xf.set('fontId', str(font_id))
-            xf.set('fillId', '0')
-            xf.set('borderId', '0')
-            xf.set('xfId', '0')
-            xf.set('applyFont', '1')
-            style_id = len(cellXfs.findall(f'{ns}xf')) - 1
-            try:
-                cellXfs.set('count',
-                            str(int(cellXfs.get('count', '0')) + 1))
-            except ValueError:
-                cellXfs.set('count', str(style_id + 1))
-
-            tree.write(str(styles_path),
-                       encoding='UTF-8', xml_declaration=True)
-            return style_id
-        except Exception as e:
-            self.log(f"    ⚠️ styles.xml: {e}")
-            return None
-
-    def _set_inline_string(self, ws_root, ns_m, col, row, text, style_id):
-        """
-        Écrit `text` comme inline string dans la cellule (col, row) du
-        worksheet XML. Crée la row et la cell si nécessaire, en respectant
-        l'ordre par r="N". Retourne True si écrit.
-        """
-        from lxml import etree as _et
-
-        sheet_data = ws_root.find(f'{ns_m}sheetData')
-        if sheet_data is None:
+        if target_anchor is None:
             return False
 
-        cell_ref = f'{self._col_letter(col)}{row}'
+        anchor_tag = target_anchor.tag.split('}')[-1]
+        from_e = target_anchor.find(f'{ns}from')
+        to_e = target_anchor.find(f'{ns}to')
+        ext_e = target_anchor.find(f'{ns}ext')
+        edit_as = target_anchor.get('editAs')
 
-        # Trouver ou créer la row
-        target_row = None
-        for r in sheet_data.findall(f'{ns_m}row'):
-            try:
-                if int(r.get('r', '0')) == row:
-                    target_row = r
-                    break
-            except ValueError:
-                continue
-        if target_row is None:
-            target_row = _et.SubElement(sheet_data, f'{ns_m}row')
-            target_row.set('r', str(row))
+        new_anchor = _et.Element(target_anchor.tag)
+        if edit_as:
+            new_anchor.set('editAs', edit_as)
 
-        # Trouver ou créer la cellule
-        target_cell = None
-        for c in target_row.findall(f'{ns_m}c'):
-            if c.get('r') == cell_ref:
-                target_cell = c
-                break
-        if target_cell is None:
-            target_cell = _et.SubElement(target_row, f'{ns_m}c')
-            target_cell.set('r', cell_ref)
+        # Conserver EXACTEMENT la même ancre de position/taille que l'objet
+        # OLE d'origine (from + to pour un twoCellAnchor, from + ext sinon).
+        if from_e is not None:
+            new_anchor.append(copy.deepcopy(from_e))
+        if anchor_tag == 'twoCellAnchor' and to_e is not None:
+            new_anchor.append(copy.deepcopy(to_e))
+        elif ext_e is not None:
+            new_anchor.append(copy.deepcopy(ext_e))
 
-        # Vider et écrire inline string
-        for child in list(target_cell):
-            target_cell.remove(child)
-        target_cell.set('t', 'inlineStr')
-        if style_id is not None:
-            target_cell.set('s', str(style_id))
-        elif 's' in target_cell.attrib:
-            del target_cell.attrib['s']
+        # ── Forme texte transparente (rectangle sans remplissage/bordure) ──
+        sp = _et.SubElement(new_anchor, f'{ns}sp')
+        sp.set('macro', '')
+        sp.set('textlink', '')
 
-        is_el = _et.SubElement(target_cell, f'{ns_m}is')
-        t_el = _et.SubElement(is_el, f'{ns_m}t')
+        nv_sp_pr = _et.SubElement(sp, f'{ns}nvSpPr')
+        cnv_pr = _et.SubElement(nv_sp_pr, f'{ns}cNvPr')
+        cnv_pr.set('id', str(shape_id))
+        cnv_pr.set('name', f'TextBox_OLE_{shape_id}')
+        cnv_sp_pr = _et.SubElement(nv_sp_pr, f'{ns}cNvSpPr')
+        cnv_sp_pr.set('txBox', '1')
+
+        sp_pr = _et.SubElement(sp, f'{ns}spPr')
+        xfrm = _et.SubElement(sp_pr, f'{nsa}xfrm')
+        _et.SubElement(xfrm, f'{nsa}off', {'x': '0', 'y': '0'})
+        _et.SubElement(xfrm, f'{nsa}ext', {'cx': '0', 'cy': '0'})
+        prst_geom = _et.SubElement(sp_pr, f'{nsa}prstGeom')
+        prst_geom.set('prst', 'rect')
+        _et.SubElement(prst_geom, f'{nsa}avLst')
+        _et.SubElement(sp_pr, f'{nsa}noFill')
+        ln = _et.SubElement(sp_pr, f'{nsa}ln')
+        _et.SubElement(ln, f'{nsa}noFill')
+
+        tx_body = _et.SubElement(sp, f'{ns}txBody')
+        body_pr = _et.SubElement(tx_body, f'{nsa}bodyPr')
+        body_pr.set('wrap', 'square')
+        body_pr.set('anchor', 'ctr')
+        body_pr.set('rtlCol', '0')
+        _et.SubElement(tx_body, f'{nsa}lstStyle')
+        p = _et.SubElement(tx_body, f'{nsa}p')
+        p_pr = _et.SubElement(p, f'{nsa}pPr')
+        p_pr.set('algn', 'ctr')
+        r = _et.SubElement(p, f'{nsa}r')
+        r_pr = _et.SubElement(r, f'{nsa}rPr')
+        r_pr.set('lang', 'fr-FR')
+        r_pr.set('sz', '1200')
+        r_pr.set('b', '1')
+        solid_fill = _et.SubElement(r_pr, f'{nsa}solidFill')
+        srgb = _et.SubElement(solid_fill, f'{nsa}srgbClr')
+        srgb.set('val', 'FF0000')
+        t_el = _et.SubElement(r, f'{nsa}t')
         t_el.text = text
+
+        _et.SubElement(new_anchor, f'{ns}clientData')
+
+        # Remplacer l'ancienne ancre par la nouvelle, au même endroit
+        idx = list(drawing_root).index(target_anchor)
+        drawing_root.remove(target_anchor)
+        drawing_root.insert(idx, new_anchor)
+
         return True
 
     def create_modified_pptx_exact_positions(self, original_path, output_dir, extracted_files, temp_path):
