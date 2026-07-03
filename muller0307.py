@@ -788,6 +788,22 @@ class EmbeddedFileExtractor:
             time.sleep(0.5)
         except Exception:
             pass
+
+    def _copy_original_if_needed(self, src, dst):
+        """
+        Copie src vers dst, sauf si les deux chemins pointent déjà vers le
+        même fichier. Se produit lors du retraitement récursif d'un fichier
+        déjà présent dans le dossier de sortie (ex: un .xlsx déjà "modifié"
+        sans nouvel objet incorporé) : une copie sur soi-même échoue avec
+        PermissionError/WinError32 sous Windows.
+        """
+        try:
+            if Path(src).resolve() == Path(dst).resolve():
+                return
+        except Exception:
+            pass
+        shutil.copy2(src, dst)
+
     def _extract_msg_attachments_only(self, msg_path, output_dir):
         """
         Extrait uniquement les pièces jointes d'un MSG (sans conversion PDF).
@@ -4476,7 +4492,7 @@ class EmbeddedFileExtractor:
                     if not position_mapping:
                         self.log(f"    ⚠️ Aucun mapping trouvé")
                         original_copy = Path(output_dir) / Path(xlsx_path).name
-                        shutil.copy2(xlsx_path, original_copy)
+                        self._copy_original_if_needed(xlsx_path, original_copy)
                         return []
                     
                     # ========================================
@@ -4691,8 +4707,8 @@ class EmbeddedFileExtractor:
                         )
                     else:
                         original_copy = Path(output_dir) / Path(xlsx_path).name
-                        shutil.copy2(xlsx_path, original_copy)
-                    
+                        self._copy_original_if_needed(xlsx_path, original_copy)
+
                     self.add_to_report('processed', {
                         'file_name': Path(xlsx_path).name,
                         'file_type': Path(xlsx_path).suffix.upper().replace('.', ''),
@@ -4704,7 +4720,7 @@ class EmbeddedFileExtractor:
                     # Pas de dossier xl/embeddings/ → aucun fichier incorporé
                     self.log(f"\n  ℹ️ Aucun dossier embeddings/ → Aucun fichier incorporé")
                     original_copy = Path(output_dir) / Path(xlsx_path).name
-                    shutil.copy2(xlsx_path, original_copy)
+                    self._copy_original_if_needed(xlsx_path, original_copy)
                     self.log(f"  ✅ Copie créée: {original_copy.name}")
                     self.add_to_report('processed', {
                         'file_name': Path(xlsx_path).name,
@@ -4721,7 +4737,7 @@ class EmbeddedFileExtractor:
             try:
                 original_copy = Path(output_dir) / Path(xlsx_path).name
                 if not original_copy.exists():
-                    shutil.copy2(xlsx_path, original_copy)
+                    self._copy_original_if_needed(xlsx_path, original_copy)
                     self.log(f"  ⚠️ Erreur → copie de l'original créée: {original_copy.name}")
             except Exception:
                 pass
@@ -5609,7 +5625,20 @@ class EmbeddedFileExtractor:
                     ws = wb.worksheets[sheet_idx - 1]
                     display = (Path(extracted_name).stem if extracted_name
                                else Path(filename).stem)
-                    cell = ws.cell(row=row, column=col)
+
+                    # Si la cellule cible fait partie d'une plage fusionnée,
+                    # openpyxl n'autorise l'écriture que sur la cellule
+                    # ancre (haut-gauche) de la fusion — les autres cellules
+                    # ("MergedCell") sont en lecture seule et lèvent
+                    # AttributeError si on tente d'y écrire directement.
+                    target_row, target_col = row, col
+                    for merged_range in ws.merged_cells.ranges:
+                        if (merged_range.min_row <= row <= merged_range.max_row and
+                                merged_range.min_col <= col <= merged_range.max_col):
+                            target_row, target_col = merged_range.min_row, merged_range.min_col
+                            break
+
+                    cell = ws.cell(row=target_row, column=target_col)
                     cell.value = f"Voir {display}"
                     cell.font = Font(bold=True, color='FF0000', size=12)
                     self.log(f"    ✅ {ws.title}!{cell.coordinate} → Voir {display}")
@@ -5626,7 +5655,7 @@ class EmbeddedFileExtractor:
             self.log(f"  📋 Détails: {traceback.format_exc()}")
             try:
                 modified_path = Path(output_dir) / Path(original_path).name
-                shutil.copy2(original_path, modified_path)
+                self._copy_original_if_needed(original_path, modified_path)
                 self.log(f"  ⚠️ Copie de l'original créée")
             except Exception:
                 pass
