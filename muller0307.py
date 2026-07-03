@@ -1515,6 +1515,7 @@ class EmbeddedFileExtractor:
         """
         Convertit les anciens formats Office vers les nouveaux formats
         .doc → .docx / .ppt → .pptx / .xls → .xlsx (.xlsm si VBA)
+        .xlsm → .xlsx (suppression du projet VBA avant traitement normal)
 
         CORRECTION POPUP ReportINI.xls :
         - Renomme temporairement le dossier XLSTART avant de lancer Excel
@@ -1527,7 +1528,7 @@ class EmbeddedFileExtractor:
             file_path = Path(file_path)
             ext = file_path.suffix.lower()
 
-            if ext not in ['.doc', '.ppt', '.xls']:
+            if ext not in ['.doc', '.ppt', '.xls', '.xlsm']:
                 return file_path, False
 
             self.log(f"    🔄 Conversion format ancien → moderne: {file_path.name}")
@@ -1773,6 +1774,116 @@ class EmbeddedFileExtractor:
                                        shell=True, capture_output=True)
 
                         # Restaurer les dossiers XLSTART renommés
+                        self._restore_xlstart_folders(xlstart_renamed)
+
+                # ── .xlsm → .xlsx (suppression du VBA) ────────────────────
+                elif ext == '.xlsm':
+                    new_path = file_path.with_suffix('.xlsx')
+                    excel = None
+                    wb = None
+                    xlstart_renamed = []
+
+                    try:
+                        # ══════════════════════════════════════════════════
+                        # ÉTAPE 1 : Tuer Excel + Neutraliser XLSTART
+                        # ══════════════════════════════════════════════════
+                        subprocess.run("taskkill /F /IM EXCEL.EXE",
+                                       shell=True, capture_output=True)
+                        time.sleep(1)
+
+                        xlstart_renamed = self._disable_xlstart_folders()
+
+                        # ══════════════════════════════════════════════════
+                        # ÉTAPE 2 : Lancer Excel en mode sécurisé
+                        # ══════════════════════════════════════════════════
+                        excel_exe = self._find_excel_exe()
+
+                        if excel_exe:
+                            self.log(f"    🔄 Lancement Excel /automation /e")
+                            subprocess.Popen(
+                                [excel_exe, '/automation', '/e'],
+                                creationflags=subprocess.CREATE_NO_WINDOW
+                            )
+                            time.sleep(4)
+
+                            try:
+                                excel = win32com.client.GetActiveObject("Excel.Application")
+                            except Exception:
+                                self.log(f"    ⚠️ GetActiveObject échoué, fallback DispatchEx")
+                                excel = win32com.client.DispatchEx("Excel.Application")
+                        else:
+                            self.log(f"    ⚠️ Excel introuvable, tentative DispatchEx")
+                            excel = win32com.client.DispatchEx("Excel.Application")
+
+                        # ══════════════════════════════════════════════════
+                        # ÉTAPE 3 : Supprimer TOUS les popups AVANT Open
+                        # ══════════════════════════════════════════════════
+                        excel.Visible = False
+                        self._suppress_all_excel_alerts(excel)
+                        self._disable_excel_addins(excel)
+
+                        # ══════════════════════════════════════════════════
+                        # ÉTAPE 4 : Ouvrir le fichier .xlsm
+                        # ══════════════════════════════════════════════════
+                        self.log(f"    📂 Ouverture: {file_path.name}")
+                        wb = excel.Workbooks.Open(
+                            str(file_path.absolute()),
+                            UpdateLinks=0,
+                            ReadOnly=False,
+                            IgnoreReadOnlyRecommended=True,
+                            CorruptLoad=1  # xlNormalLoad
+                        )
+                        self._suppress_all_excel_alerts(excel)
+
+                        # ══════════════════════════════════════════════════
+                        # ÉTAPE 5 : Supprimer explicitement le projet VBA
+                        # (SaveAs en .xlsx le supprime déjà automatiquement,
+                        # ceci est une sécurité supplémentaire si l'accès au
+                        # modèle d'objet VBA est autorisé sur le poste)
+                        # ══════════════════════════════════════════════════
+                        try:
+                            if wb.HasVBProject:
+                                vb_components = wb.VBProject.VBComponents
+                                for i in range(vb_components.Count, 0, -1):
+                                    try:
+                                        vb_components.Remove(vb_components.Item(i))
+                                    except Exception:
+                                        pass
+                                self.log(f"    🧹 Projet VBA nettoyé ({file_path.name})")
+                        except Exception as vba_err:
+                            self.log(f"    ℹ️ Nettoyage VBA ignoré (accès modèle objet VBA non autorisé) : {vba_err}")
+
+                        # ══════════════════════════════════════════════════
+                        # ÉTAPE 6 : Sauvegarder en .xlsx (supprime le VBA)
+                        # ══════════════════════════════════════════════════
+                        try:
+                            wb.SaveAs(str(new_path.absolute()), FileFormat=51)  # xlOpenXMLWorkbook = .xlsx
+                            self.log(f"    ✅ Converti (VBA supprimé) : {file_path.name} → {new_path.name}")
+                        except Exception as save_err:
+                            self.log(f"    ❌ Échec conversion .xlsm → .xlsx : {save_err}")
+                            return file_path, False
+
+                        return new_path, True
+
+                    except Exception as e:
+                        self.log(f"    ❌ Erreur conversion .xlsm: {e}")
+                        return file_path, False
+
+                    finally:
+                        try:
+                            if wb is not None:
+                                wb.Close(False)
+                        except Exception:
+                            pass
+                        try:
+                            if excel is not None:
+                                excel.DisplayAlerts = False
+                                excel.Quit()
+                        except Exception:
+                            pass
+                        time.sleep(1)
+                        subprocess.run("taskkill /F /IM EXCEL.EXE",
+                                       shell=True, capture_output=True)
                         self._restore_xlstart_folders(xlstart_renamed)
 
                 return file_path, False
@@ -7788,9 +7899,12 @@ class EmbeddedFileExtractor:
 
             try:
                 # ========================================
-                # CONVERSION ANCIEN FORMAT SI NÉCESSAIRE
+                # CONVERSION ANCIEN FORMAT / XLSM SI NÉCESSAIRE
+                # (.doc/.ppt/.xls → format moderne, .xlsm → .xlsx sans VBA,
+                #  même logique que pour les fichiers encapsulés
+                #  word/ppt/pdf : on normalise AVANT le traitement normal)
                 # ========================================
-                if file_ext in ['.doc', '.ppt', '.xls']:
+                if file_ext in ['.doc', '.ppt', '.xls', '.xlsm']:
                     original_legacy_name = file_path.name
                     converted_path, was_converted = self.convert_legacy_to_modern_format(file_path)
 
@@ -7809,7 +7923,7 @@ class EmbeddedFileExtractor:
                             except Exception as del_err:
                                 self.log(f"  ⚠️ Impossible de supprimer {original_legacy_name}: {del_err}")
                     else:
-                        self.log(f"  ⚠️ Conversion échouée, traitement de l'ancien format")
+                        self.log(f"  ⚠️ Conversion échouée, traitement du format d'origine")
 
                 # ========================================
                 # TRAITEMENT SELON LE FORMAT
