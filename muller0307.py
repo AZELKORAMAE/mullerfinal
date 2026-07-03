@@ -5643,7 +5643,12 @@ class EmbeddedFileExtractor:
         modifications_applied = 0
 
         with tempfile.TemporaryDirectory() as td:
-            tp = Path(td)
+            # .resolve() : sur certains postes Windows, TEMP est retourné
+            # en forme de nom court (8.3, ex: UP6007~1) alors que
+            # Path.resolve() sur les fichiers extraits redonne le nom long
+            # — sans ce .resolve() ici, relative_to() plus bas échoue avec
+            # "not in the subpath of" alors que c'est le même dossier.
+            tp = Path(td).resolve()
             with zipfile.ZipFile(original_path, 'r') as zf:
                 zf.extractall(tp)
 
@@ -5858,28 +5863,49 @@ class EmbeddedFileExtractor:
         ns = f'{{{ns_xdr}}}'
         nsa = f'{{{ns_a}}}'
 
-        target_anchor = None
-        for anchor in list(drawing_root):
-            tag = anchor.tag.split('}')[-1] if '}' in anchor.tag else anchor.tag
-            if tag not in ('twoCellAnchor', 'oneCellAnchor'):
-                continue
-            for cnv in anchor.iter(f'{ns}cNvPr'):
-                if cnv.get('id') == str(shape_id):
-                    target_anchor = anchor
-                    break
-            if target_anchor is not None:
+        # ── 1. Trouver le cNvPr correspondant, où qu'il soit dans l'arbre.
+        # Les objets OLE sont très souvent enveloppés dans
+        # mc:AlternateContent/mc:Choice (repli VML pour les anciennes
+        # versions d'Excel) : l'ancre n'est donc pas forcément un enfant
+        # direct de drawing_root, d'où l'usage de .iter() ici.
+        target_cnv = None
+        for cnv in drawing_root.iter(f'{ns}cNvPr'):
+            if cnv.get('id') == str(shape_id):
+                target_cnv = cnv
                 break
-
-        if target_anchor is None:
+        if target_cnv is None:
             return False
 
-        anchor_tag = target_anchor.tag.split('}')[-1]
-        from_e = target_anchor.find(f'{ns}from')
-        to_e = target_anchor.find(f'{ns}to')
-        ext_e = target_anchor.find(f'{ns}ext')
-        edit_as = target_anchor.get('editAs')
+        # ── 2. Remonter jusqu'à l'ancre (twoCellAnchor/oneCellAnchor) pour
+        # récupérer sa position exacte (from/to ou from/ext).
+        anchor_elem = target_cnv
+        while anchor_elem is not None:
+            tag = (anchor_elem.tag.split('}')[-1]
+                   if '}' in anchor_elem.tag else anchor_elem.tag)
+            if tag in ('twoCellAnchor', 'oneCellAnchor'):
+                break
+            anchor_elem = anchor_elem.getparent()
+        if anchor_elem is None:
+            return False
 
-        new_anchor = _et.Element(target_anchor.tag)
+        anchor_tag = anchor_elem.tag.split('}')[-1]
+        from_e = anchor_elem.find(f'{ns}from')
+        to_e = anchor_elem.find(f'{ns}to')
+        ext_e = anchor_elem.find(f'{ns}ext')
+        edit_as = anchor_elem.get('editAs')
+
+        # ── 3. Remonter jusqu'à l'élément DIRECTEMENT enfant de
+        # drawing_root (l'ancre elle-même, ou son wrapper
+        # mc:AlternateContent) pour le retirer intégralement — sinon un
+        # doublon (mc:Fallback) avec l'ancien objet OLE resterait présent.
+        top_level = anchor_elem
+        while (top_level.getparent() is not None
+               and top_level.getparent() is not drawing_root):
+            top_level = top_level.getparent()
+        if top_level.getparent() is not drawing_root:
+            return False
+
+        new_anchor = _et.Element(f'{ns}{anchor_tag}')
         if edit_as:
             new_anchor.set('editAs', edit_as)
 
@@ -5938,9 +5964,10 @@ class EmbeddedFileExtractor:
 
         _et.SubElement(new_anchor, f'{ns}clientData')
 
-        # Remplacer l'ancienne ancre par la nouvelle, au même endroit
-        idx = list(drawing_root).index(target_anchor)
-        drawing_root.remove(target_anchor)
+        # Remplacer l'ancien wrapper (ancre ou mc:AlternateContent) par la
+        # nouvelle ancre simple, au même endroit
+        idx = list(drawing_root).index(top_level)
+        drawing_root.remove(top_level)
         drawing_root.insert(idx, new_anchor)
 
         return True
