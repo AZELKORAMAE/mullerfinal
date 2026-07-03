@@ -5904,10 +5904,11 @@ class EmbeddedFileExtractor:
         cnv_sp_pr = _et.SubElement(nv_sp_pr, f'{ns}cNvSpPr')
         cnv_sp_pr.set('txBox', '1')
 
+        # Pas de <a:xfrm> ici : pour une forme ancrée en twoCellAnchor,
+        # la position/taille est entièrement pilotée par from/to. Un xfrm
+        # à taille nulle (0,0) rend la forme dégénérée et Excel la retire
+        # silencieusement (réparation automatique à l'ouverture).
         sp_pr = _et.SubElement(sp, f'{ns}spPr')
-        xfrm = _et.SubElement(sp_pr, f'{nsa}xfrm')
-        _et.SubElement(xfrm, f'{nsa}off', {'x': '0', 'y': '0'})
-        _et.SubElement(xfrm, f'{nsa}ext', {'cx': '0', 'cy': '0'})
         prst_geom = _et.SubElement(sp_pr, f'{nsa}prstGeom')
         prst_geom.set('prst', 'rect')
         _et.SubElement(prst_geom, f'{nsa}avLst')
