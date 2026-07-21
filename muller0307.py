@@ -2473,10 +2473,14 @@ class EmbeddedFileExtractor:
                 self.log(f"      ✅ INDEX APPLIQUÉ : FJ_{next_num} "
                         f"(base={reference_start_index}, position={self.extracted_count})")
             else:
-                # Prochain numéro séquentiel après le dernier assigné
-                next_num = self._fj_floor + 1
+                # Prochain numéro séquentiel après le dernier assigné, sans
+                # jamais redescendre en dessous du numéro déjà présent dans
+                # le nom du fichier source (ex: ..._FJ_4 → le premier extrait
+                # est au minimum FJ_5, même si le dossier de sortie était vide)
+                base_floor = max(self._fj_floor, file_number_in_name)
+                next_num = base_floor + 1
                 self.log(f"      ℹ️ FICHIER : FJ_{next_num} "
-                        f"(après plancher FJ_{self._fj_floor})")
+                        f"(après plancher FJ_{self._fj_floor}, numéro source FJ_{file_number_in_name})")
 
             # ── Éviter collision avec un FJ déjà utilisé ─────────────────
             while next_num in self._used_fj_numbers:
