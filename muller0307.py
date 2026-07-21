@@ -5990,8 +5990,9 @@ class EmbeddedFileExtractor:
 
                 prs = Presentation(original_path)
 
-                # Largeur de diapo (utile pour éviter de déborder)
+                # Dimensions de diapo (pour éviter de déborder de la page)
                 slide_width = prs.slide_width
+                slide_height = prs.slide_height
 
                 # Grouper les actions par slide
                 slides_actions = {}
@@ -6041,6 +6042,15 @@ class EmbeddedFileExtractor:
                             if not overlap:
                                 break
                         return _top
+
+                    def _clamp_to_slide(left, top, w, h):
+                        """Ramène (left, top) dans les limites de la diapo pour que
+                        la boîte de texte n'en déborde jamais (haut/bas/gauche/droite)."""
+                        max_left = max(Emu(0), slide_width - w)
+                        max_top = max(Emu(0), slide_height - h)
+                        clamped_left = min(max(Emu(0), left), max_left)
+                        clamped_top = min(max(Emu(0), top), max_top)
+                        return clamped_left, clamped_top
 
                     # Track names of added textboxes for reliable z-order identification
                     # (lxml proxy id() is not stable — we use shape name instead)
@@ -6120,14 +6130,15 @@ class EmbeddedFileExtractor:
                                 warning_top = top - Inches(0.45)
                                 if warning_top < 0:
                                     warning_top = top + height + Inches(0.1)
-                                # Anti-chevauchement
+                                # Anti-chevauchement puis recadrage dans la diapo
                                 warning_top = _find_free_top(left, warning_top, w_w, w_h)
-                                _placed_boxes.append((left, warning_top, left + w_w, warning_top + w_h))
+                                warning_left, warning_top = _clamp_to_slide(left, warning_top, w_w, w_h)
+                                _placed_boxes.append((warning_left, warning_top,
+                                                      warning_left + w_w, warning_top + w_h))
 
-                                txBox = slide.shapes.add_textbox(left, warning_top, w_w, w_h)
+                                txBox = slide.shapes.add_textbox(warning_left, warning_top, w_w, w_h)
                                 txBox.fill.background()
-                                txBox.line.color.rgb = PPTRGBColor(200, 120, 0)
-                                txBox.line.width = PPTPt(1.0)
+                                txBox.line.fill.background()
 
                                 tf = txBox.text_frame
                                 tf.clear()
@@ -6153,23 +6164,25 @@ class EmbeddedFileExtractor:
                         # ────────────────────────────────────────────────────────────
                         elif action_type == 'keep_unsupported':
                             try:
-                                gap          = Inches(0.15)
-                                label_left   = left + width + gap
-                                label_width  = Inches(2.8)
+                                gap          = Inches(0.08)
+                                label_width  = Inches(1.5)
                                 label_height = max(height, Inches(0.4))
+                                label_left   = left + width + gap
 
                                 if label_left + label_width > slide_width:
                                     label_left = max(Emu(0), left - label_width - gap)
 
-                                # Anti-chevauchement
+                                # Anti-chevauchement puis recadrage dans la diapo
+                                # (reste "juste à côté" du fichier, jamais hors page)
                                 label_top = _find_free_top(label_left, top, label_width, label_height)
+                                label_left, label_top = _clamp_to_slide(
+                                    label_left, label_top, label_width, label_height)
                                 _placed_boxes.append((label_left, label_top,
                                                       label_left + label_width, label_top + label_height))
 
                                 txBox = slide.shapes.add_textbox(label_left, label_top, label_width, label_height)
                                 txBox.fill.background()
-                                txBox.line.color.rgb = PPTRGBColor(200, 120, 0)
-                                txBox.line.width = PPTPt(1.0)
+                                txBox.line.fill.background()
 
                                 tf = txBox.text_frame
                                 tf.word_wrap = True
@@ -6177,7 +6190,7 @@ class EmbeddedFileExtractor:
                                 p = tf.paragraphs[0]
                                 p.text = "⚠️ Type de fichier non supporté par l'archivage SharePoint"
                                 p.font.bold  = True
-                                p.font.size  = PPTPt(9)
+                                p.font.size  = PPTPt(8)
                                 p.font.color.rgb = PPTRGBColor(255, 200, 0)
 
                                 _tb_nm = f"_mlr_tb_{_tb_name_seq[0]}"
@@ -6185,7 +6198,7 @@ class EmbeddedFileExtractor:
                                 txBox.name = _tb_nm
                                 _added_tb_names.append(_tb_nm)
 
-                                self.log(f"    ✅ Message NON SUPPORTÉ ajouté à droite du shape")
+                                self.log(f"    ✅ Message NON SUPPORTÉ ajouté à côté du shape")
                             except Exception as e:
                                 self.log(f"    ⚠️ Erreur message non supporté: {e}")
 
