@@ -6125,8 +6125,7 @@ class EmbeddedFileExtractor:
                                 _placed_boxes.append((left, warning_top, left + w_w, warning_top + w_h))
 
                                 txBox = slide.shapes.add_textbox(left, warning_top, w_w, w_h)
-                                txBox.fill.solid()
-                                txBox.fill.fore_color.rgb = PPTRGBColor(50, 50, 50)
+                                txBox.fill.background()
                                 txBox.line.color.rgb = PPTRGBColor(200, 120, 0)
                                 txBox.line.width = PPTPt(1.0)
 
@@ -6168,8 +6167,7 @@ class EmbeddedFileExtractor:
                                                       label_left + label_width, label_top + label_height))
 
                                 txBox = slide.shapes.add_textbox(label_left, label_top, label_width, label_height)
-                                txBox.fill.solid()
-                                txBox.fill.fore_color.rgb = PPTRGBColor(50, 50, 50)
+                                txBox.fill.background()
                                 txBox.line.color.rgb = PPTRGBColor(200, 120, 0)
                                 txBox.line.width = PPTPt(1.0)
 
