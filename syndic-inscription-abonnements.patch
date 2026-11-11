@@ -1,0 +1,3053 @@
+From b14d09a2d10fce09bc99ae8a93923a1911de5d16 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 11 Nov 2026 17:45:09 +0000
+Subject: [PATCH] =?UTF-8?q?Inscription=20publique,=20comptes=20syndic=20?=
+ =?UTF-8?q?=C3=A0=20approuver,=20plans=20et=20paiements=20par=20virement?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+- /inscription : création de compte (case syndic -> approbation admin)
+- /admin : approbation des syndics, validation/refus des virements avec capture, RIB
+- /app/abonnement : plan, jours restants, paiement par virement, changement de plan
+- Liens d'invitation : demande d'adhésion (nouveau ou compte existant) approuvée par le syndic
+- Syndic : bloquer / débloquer / supprimer les habitants
+- Page d'accueil : tarifs (essai 1 mois, Standard 30 DH, Entreprise sur devis) et contact
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01UxmYueNHCepZfuPHaaGnop
+---
+ README.md                                     |   2 +
+ docs/inscription-abonnements.md               |  29 ++
+ next.config.ts                                |   8 +
+ src/app/actions.ts                            | 138 +++++++-
+ src/app/admin/actions.ts                      |  75 ++++-
+ src/app/admin/layout.tsx                      |  14 +-
+ src/app/admin/page.tsx                        | 206 +++++++++++-
+ src/app/app/abonnement/actions.ts             |  82 +++++
+ src/app/app/abonnement/page.tsx               | 256 +++++++++++++++
+ src/app/app/communaute/actions.ts             |  48 +++
+ src/app/app/communaute/page.tsx               | 135 +++++++-
+ src/app/app/layout.tsx                        |  58 +++-
+ src/app/connexion/page.tsx                    |   8 +-
+ src/app/en-attente/page.tsx                   | 119 +++++++
+ src/app/globals.css                           | 162 ++++++++++
+ src/app/inscription/page.tsx                  |  42 ++-
+ src/app/page.tsx                              | 107 ++++++-
+ src/app/rejoindre/[token]/actions.ts          |  35 ++-
+ src/app/rejoindre/[token]/page.tsx            |  34 +-
+ src/app/resident/page.tsx                     |  30 +-
+ src/components/auth-form.tsx                  |  15 +-
+ src/components/i18n.tsx                       |   2 +-
+ src/components/signup-form.tsx                | 136 ++++++++
+ src/lib/plans.ts                              |  53 ++++
+ src/lib/translations-data.json                | 112 ++++++-
+ src/lib/translations-errors.json              | 140 +++++++++
+ src/lib/validation.ts                         |  12 +
+ src/proxy.ts                                  |   1 +
+ .../202611110001_signup_billing.sql           | 297 ++++++++++++++++++
+ tests/signup-billing.test.ts                  | 127 ++++++++
+ 30 files changed, 2435 insertions(+), 48 deletions(-)
+ create mode 100644 docs/inscription-abonnements.md
+ create mode 100644 next.config.ts
+ create mode 100644 src/app/app/abonnement/actions.ts
+ create mode 100644 src/app/app/abonnement/page.tsx
+ create mode 100644 src/app/en-attente/page.tsx
+ create mode 100644 src/components/signup-form.tsx
+ create mode 100644 src/lib/plans.ts
+ create mode 100644 supabase/migrations/202611110001_signup_billing.sql
+ create mode 100644 tests/signup-billing.test.ts
+
+diff --git a/README.md b/README.md
+index fad2999..b1039a4 100644
+--- a/README.md
++++ b/README.md
+@@ -45,3 +45,5 @@ Les tests PostgreSQL embarqués PGlite vérifient RLS et les contraintes avec de
+ `src/app` : routes et actions serveur ; `src/components` : interface ; `src/lib` : données, Supabase, validations ; `supabase/migrations` : SQL versionné ; `tests` : validation et sécurité ; `.github/workflows` : CI.
+ 
+ Réinitialisation par code à six chiffres : voir [la configuration et la recette Supabase Auth](docs/password-recovery.md). Appliquer le modèle d’e-mail et les paramètres OTP avant de déployer cette version ; aucune migration SQL n’est requise.
++
++Inscription publique, approbation des comptes syndic, plans (essai 1 mois, Standard 30 DH/mois, Entreprise sur devis), paiement par virement avec validation dans `/admin`, demandes d’adhésion et blocage/suppression des habitants : voir [docs/inscription-abonnements.md](docs/inscription-abonnements.md).
+diff --git a/docs/inscription-abonnements.md b/docs/inscription-abonnements.md
+new file mode 100644
+index 0000000..47a2224
+--- /dev/null
++++ b/docs/inscription-abonnements.md
+@@ -0,0 +1,29 @@
++# Inscription publique, comptes syndic et abonnements
++
++Migration : `supabase/migrations/202611110001_signup_billing.sql` (à appliquer une seule fois, après les précédentes). Elle élargit deux contraintes CHECK (plans, liens de notification), ajoute une colonne `blocked_at` à `syndic_resident_access`, quatre tables (`syndic_account_requests`, `syndic_billing_settings`, `syndic_subscription_payments`, `syndic_join_requests`) et un bucket Storage privé `syndic-payment-proofs`. `SUPABASE_SECRET_KEY` est nécessaire (création des comptes, envoi et affichage des captures).
++
++## Création de compte (`/inscription`)
++
++Prénom, nom, téléphone, e-mail, mot de passe. Le compte normal est actif immédiatement. Si la case « Je suis syndic » est cochée, l’utilisateur indique le nom de son syndic et le plan souhaité ; il est redirigé vers `/en-attente` jusqu’à l’approbation par l’administrateur. Un compte existant peut aussi demander à devenir syndic depuis `/en-attente`.
++
++## Administration (`/admin`)
++
++Accès réservé aux comptes présents dans `syndic_platform_admins`. Un bandeau et un badge 🔔 indiquent les éléments à traiter :
++
++- **Comptes syndic en attente** : Approuver (crée l’organisation, le rôle admin et un essai gratuit d’un mois) ou Refuser.
++- **Virements à vérifier** : la capture est affichée (lien signé 1 h). « Valider et prolonger » prolonge l’abonnement du nombre de mois payés à partir de la date de fin actuelle (ou d’aujourd’hui si expiré) et applique le plan choisi ; « Refuser » accepte un motif facultatif. Le syndic est notifié.
++- **Coordonnées bancaires (RIB)** : titulaire, banque, RIB, instructions affichés aux syndics.
++
++## Espace syndic
++
++- `/app/abonnement` : plan actuel, jours restants, date de fin, RIB, envoi d’un paiement (plan Standard 30 DH/mois ou Entreprise sur devis, durée, référence, capture PNG/JPG/WEBP/PDF ≤ 5 Mo), historique. Changer de plan = envoyer un paiement pour le nouveau plan.
++- Bandeau « jours restants / expiré » sur toutes les pages `/app`.
++- `/app/communaute` : demandes d’adhésion (Approuver / Refuser) et liste des utilisateurs de l’espace (Bloquer / Débloquer / Supprimer).
++
++## Lien d’invitation (`/rejoindre/<lien>`)
++
++Sans compte : création du compte puis demande envoyée. Avec un compte : « Se connecter pour rejoindre » puis « Rejoindre avec mon compte ». Dans les deux cas l’accès au logement n’est ouvert qu’après approbation du syndic.
++
++## Limites
++
++Les comptes créés par `/inscription` sont confirmés sans e-mail (même principe que les liens d’invitation existants) : l’adresse n’est pas vérifiée. Les notifications sont internes au site (aucun e-mail/SMS). L’expiration de l’abonnement affiche un avertissement mais ne bloque pas les opérations.
+diff --git a/next.config.ts b/next.config.ts
+new file mode 100644
+index 0000000..fd2b9c9
+--- /dev/null
++++ b/next.config.ts
+@@ -0,0 +1,8 @@
++import type { NextConfig } from "next";
++const nextConfig: NextConfig = {
++  experimental: {
++    // Transfer screenshots (max 5 MB) are uploaded through a Server Action.
++    serverActions: { bodySizeLimit: "6mb" },
++  },
++};
++export default nextConfig;
+diff --git a/src/app/actions.ts b/src/app/actions.ts
+index d220d59..2faa7dc 100644
+--- a/src/app/actions.ts
++++ b/src/app/actions.ts
+@@ -1,9 +1,10 @@
+ "use server";
+ import { redirect } from "next/navigation";
+ import { revalidatePath } from "next/cache";
++import { z } from "zod";
+ import { supabase } from "@/lib/supabase/server";
+ import {
+-  credentials,
++  signUpSchema,
+   organizationSchema,
+   residenceSchema,
+   unitSchema,
+@@ -11,21 +12,43 @@ import {
+ function message(path: string, text: string): never {
+   redirect(`${path}?message=${encodeURIComponent(text)}`);
+ }
++function safeNext(value: FormDataEntryValue | null) {
++  const next = String(value ?? "");
++  return /^\/rejoindre\/[0-9a-f-]{36}$/i.test(next) ? next : "";
++}
++async function landingFor(db: Awaited<ReturnType<typeof supabase>>) {
++  const { data } = await db.rpc("syndic_my_status");
++  const status = (data ?? {}) as {
++    admin?: boolean;
++    member?: boolean;
++    resident?: boolean;
++    request?: string | null;
++  };
++  if (status.admin) return "/admin";
++  if (status.member) return "/app";
++  if (status.request === "pending" || status.request === "rejected")
++    return "/en-attente";
++  if (status.resident) return "/operations";
++  return "/resident";
++}
+ export async function signIn(form: FormData) {
+   const email = String(form.get("email") ?? "");
+   const password = String(form.get("password") ?? "");
++  const next = safeNext(form.get("next"));
++  const back = next ? `/connexion?next=${encodeURIComponent(next)}&` : "/connexion?";
+   if (!email || !password)
+-    message("/connexion", "Renseignez votre e-mail et votre mot de passe.");
++    redirect(back + "message=" + encodeURIComponent("Renseignez votre e-mail et votre mot de passe."));
+   const db = await supabase();
+   const { error } = await db.auth.signInWithPassword({ email, password });
+   if (error)
+-    message(
+-      "/connexion",
+-      "Connexion impossible. Vérifiez vos identifiants et la confirmation de votre adresse.",
++    redirect(
++      back +
++        "message=" +
++        encodeURIComponent(
++          "Connexion impossible. Vérifiez vos identifiants et la confirmation de votre adresse.",
++        ),
+     );
+-  const { data: isAdmin } = await db.rpc("syndic_is_platform_admin");
+-  if (isAdmin === true) redirect("/admin");
+-  const { data: resident } = await db.rpc("syndic_my_resident_space");
++  if (next) redirect(next);
+   const { data: invitations } = await db
+     .from("syndic_resident_invitations")
+     .select("id")
+@@ -35,10 +58,105 @@ export async function signIn(form: FormData) {
+     .gt("expires_at", new Date().toISOString())
+     .limit(1);
+   if (invitations?.length) redirect("/resident");
+-  redirect("/operations");
++  redirect(await landingFor(db));
+ }
+ export async function signUp(form: FormData) {
+-  redirect("/connexion?message=Inscription%20publique%20fermée.");
++  const isSyndic = form.get("syndic") === "on";
++  const next = safeNext(form.get("next"));
++  const input = signUpSchema.safeParse({
++    ...Object.fromEntries(form),
++    organization: isSyndic ? form.get("organization") : "-",
++    plan: isSyndic ? form.get("plan") : "essai",
++  });
++  const back =
++    "/inscription?" +
++    (isSyndic ? "syndic=1&" : "") +
++    (next ? `next=${encodeURIComponent(next)}&` : "");
++  if (!input.success || (isSyndic && input.data.organization.length < 2))
++    message(
++      back.slice(0, -1),
++      isSyndic
++        ? "Vérifiez vos informations et le nom de votre syndic."
++        : "Vérifiez vos informations.",
++    );
++  const v = input.data;
++  if (v.password !== String(form.get("confirmation") ?? ""))
++    message(back.slice(0, -1), "Les mots de passe ne correspondent pas.");
++  let created = false;
++  try {
++    const { provisionClient } = await import("@/lib/provision");
++    const service = provisionClient();
++    const { data, error } = await service.auth.admin.createUser({
++      email: v.email,
++      password: v.password,
++      email_confirm: true,
++      user_metadata: {
++        first_name: v.first_name,
++        last_name: v.last_name,
++        phone: v.phone,
++        nickname: v.first_name,
++      },
++    });
++    created = !error && Boolean(data.user);
++  } catch {}
++  if (!created)
++    message(
++      back.slice(0, -1),
++      "Création impossible. Cette adresse possède peut-être déjà un compte : connectez-vous.",
++    );
++  const db = await supabase();
++  const { error } = await db.auth.signInWithPassword({
++    email: v.email,
++    password: v.password,
++  });
++  if (error) message("/connexion", "Votre compte est créé. Connectez-vous.");
++  if (isSyndic) {
++    const { error: requestError } = await db.rpc(
++      "syndic_request_syndic_account",
++      {
++        organization: v.organization,
++        plan_choice: v.plan,
++        person_name: `${v.first_name} ${v.last_name}`,
++        person_phone: v.phone,
++      },
++    );
++    if (requestError)
++      message("/en-attente", "Votre compte est créé, mais la demande syndic n’a pas pu être enregistrée. Réessayez ci-dessous.");
++    redirect("/en-attente");
++  }
++  if (next) redirect(next);
++  message("/resident", "Bienvenue ! Votre compte est créé.");
++}
++export async function requestSyndicAccount(form: FormData) {
++  const { db, user } = await authenticated();
++  const input = z
++    .object({
++      organization: z.string().trim().min(2).max(120),
++      plan: z.enum(["essai", "standard", "entreprise"]),
++      phone: z
++        .string()
++        .trim()
++        .regex(/^\+?[0-9 ()-]{8,24}$/),
++    })
++    .safeParse(Object.fromEntries(form));
++  if (!input.success) message("/en-attente", "Vérifiez vos informations.");
++  const meta = user.user_metadata ?? {};
++  const name =
++    `${meta.first_name ?? ""} ${meta.last_name ?? ""}`.trim() ||
++    user.email ||
++    "Syndic";
++  const { error } = await db.rpc("syndic_request_syndic_account", {
++    organization: input.data.organization,
++    plan_choice: input.data.plan,
++    person_name: name,
++    person_phone: input.data.phone,
++  });
++  message(
++    "/en-attente",
++    error
++      ? "Demande impossible : une demande est déjà en cours ou votre compte est déjà syndic."
++      : "Demande envoyée. Vous serez notifié après validation.",
++  );
+ }
+ export async function signOut() {
+   const db = await supabase();
+diff --git a/src/app/admin/actions.ts b/src/app/admin/actions.ts
+index 1e81803..dcade18 100644
+--- a/src/app/admin/actions.ts
++++ b/src/app/admin/actions.ts
+@@ -8,7 +8,14 @@ export async function setSubscription(form: FormData) {
+   const input = z
+     .object({
+       organization_id: z.uuid(),
+-      plan: z.enum(["essentiel", "pro", "business"]),
++      plan: z.enum([
++        "essai",
++        "standard",
++        "entreprise",
++        "essentiel",
++        "pro",
++        "business",
++      ]),
+       status: z.enum([
+         "trialing",
+         "active",
+@@ -38,3 +45,69 @@ export async function setSubscription(form: FormData) {
+   revalidatePath("/admin");
+   redirect("/admin?message=Abonnement%20mis%20à%20jour%20et%20historisé.");
+ }
++function back(text: string): never {
++  revalidatePath("/admin");
++  redirect("/admin?message=" + encodeURIComponent(text));
++}
++export async function decideAccount(form: FormData) {
++  const { db } = await platformAdmin();
++  const input = z
++    .object({ user_id: z.uuid(), decision: z.enum(["approve", "reject"]) })
++    .safeParse(Object.fromEntries(form));
++  if (!input.success) back("Demande invalide.");
++  const { error } = await db.rpc("syndic_admin_decide_account", {
++    target: input.data.user_id,
++    approve: input.data.decision === "approve",
++  });
++  if (error) back("Décision impossible : demande déjà traitée.");
++  back(
++    input.data.decision === "approve"
++      ? "Compte syndic approuvé : essai gratuit d’un mois activé."
++      : "Demande de compte syndic refusée.",
++  );
++}
++export async function reviewPayment(form: FormData) {
++  const { db } = await platformAdmin();
++  const input = z
++    .object({
++      id: z.uuid(),
++      decision: z.enum(["approve", "reject"]),
++      note: z.string().trim().max(500).default(""),
++    })
++    .safeParse({
++      id: form.get("id"),
++      decision: form.get("decision"),
++      note: form.get("note") ?? "",
++    });
++  if (!input.success) back("Paiement invalide.");
++  const { error } = await db.rpc("syndic_admin_review_payment", {
++    target: input.data.id,
++    approve: input.data.decision === "approve",
++    note: input.data.note,
++  });
++  if (error) back("Décision impossible : paiement déjà traité.");
++  back(
++    input.data.decision === "approve"
++      ? "Paiement validé : abonnement prolongé."
++      : "Paiement refusé.",
++  );
++}
++export async function saveBilling(form: FormData) {
++  const { db } = await platformAdmin();
++  const input = z
++    .object({
++      account_holder: z.string().trim().max(160),
++      bank_name: z.string().trim().max(160),
++      rib: z.string().trim().max(64),
++      instructions: z.string().trim().max(1000),
++    })
++    .safeParse(Object.fromEntries(form));
++  if (!input.success) back("Vérifiez les coordonnées bancaires.");
++  const { error } = await db.rpc("syndic_admin_set_billing", {
++    holder: input.data.account_holder,
++    bank: input.data.bank_name,
++    account_rib: input.data.rib,
++    notes: input.data.instructions,
++  });
++  back(error ? "Enregistrement impossible." : "Coordonnées bancaires enregistrées.");
++}
+diff --git a/src/app/admin/layout.tsx b/src/app/admin/layout.tsx
+index 0d0fc21..987b32c 100644
+--- a/src/app/admin/layout.tsx
++++ b/src/app/admin/layout.tsx
+@@ -9,7 +9,18 @@ export default async function Layout({
+ }: {
+   children: React.ReactNode;
+ }) {
+-  const { user } = await platformAdmin();
++  const { db, user } = await platformAdmin();
++  const [accounts, payments] = await Promise.all([
++    db
++      .from("syndic_account_requests")
++      .select("user_id", { count: "exact", head: true })
++      .eq("status", "pending"),
++    db
++      .from("syndic_subscription_payments")
++      .select("id", { count: "exact", head: true })
++      .eq("status", "pending"),
++  ]);
++  const pending = (accounts.count ?? 0) + (payments.count ?? 0);
+   return (
+     <div className="app-shell">
+       <aside className="sidebar">
+@@ -17,6 +28,7 @@ export default async function Layout({
+         <nav>
+           <Link href="/admin">
+             <I18nText text="Administration plateforme" />
++            {pending > 0 && <span className="badge">🔔 {pending}</span>}
+           </Link>
+           <Link href="/app">
+             <I18nText text="Espace syndic" />
+diff --git a/src/app/admin/page.tsx b/src/app/admin/page.tsx
+index 355dbd2..936eb04 100644
+--- a/src/app/admin/page.tsx
++++ b/src/app/admin/page.tsx
+@@ -4,7 +4,9 @@ import { I18nText } from "@/components/i18n";
+ import { platformAdmin } from "@/lib/access";
+ import { Submit } from "@/components/submit";
+ import { Notice } from "@/components/notice";
+-import { setSubscription } from "./actions";
++import { setSubscription, decideAccount, reviewPayment, saveBilling } from "./actions";
++import { provisionClient } from "@/lib/provision";
++import { planLabels } from "@/lib/plans";
+ import { provisionSyndic } from "./provision";
+ const statuses: Record<string, string> = {
+   trialing: "Essai",
+@@ -22,7 +24,7 @@ export default async function Page({
+   const intlLocale = await getIntlLocale();
+ 
+   const { db } = await platformAdmin();
+-  const [orgs, subs, history] = await Promise.all([
++  const [orgs, subs, history, requests, payments, billing] = await Promise.all([
+     db.rpc("syndic_admin_organizations"),
+     db.from("syndic_subscription_records").select("*"),
+     db
+@@ -30,7 +32,32 @@ export default async function Page({
+       .select("id,organization_id,new_value,created_at")
+       .order("created_at", { ascending: false })
+       .limit(20),
++    db
++      .from("syndic_account_requests")
++      .select("*")
++      .eq("status", "pending")
++      .order("created_at"),
++    db
++      .from("syndic_subscription_payments")
++      .select("*")
++      .eq("status", "pending")
++      .order("created_at"),
++    db.from("syndic_billing_settings").select("*").maybeSingle(),
+   ]);
++  const proofs: Record<string, string> = {};
++  if (payments.data?.length) {
++    try {
++      const { data } = await provisionClient()
++        .storage.from("syndic-payment-proofs")
++        .createSignedUrls(
++          payments.data.map((p) => p.proof_path),
++          3600,
++        );
++      data?.forEach((d) => {
++        if (d.path && d.signedUrl) proofs[d.path] = d.signedUrl;
++      });
++    } catch {}
++  }
+   const organizations = (orgs.data ?? []) as {
+     id: string;
+     name: string;
+@@ -58,6 +85,114 @@ export default async function Page({
+         message={(await searchParams).message}
+         error={Boolean(orgs.error || subs.error || history.error)}
+       />
++      {(requests.data?.length || payments.data?.length) ? (
++        <div role="alert" className="notice">
++          🔔 <I18nText text="À traiter :" />
++          {requests.data?.length ?? 0} <I18nText text="compte(s) syndic" /> ·{" "}
++          {payments.data?.length ?? 0} <I18nText text="virement(s)" />
++        </div>
++      ) : null}
++      <section className="card" style={{ marginBottom: 24 }}>
++        <h2>
++          <I18nText text="Comptes syndic en attente d’approbation" />
++        </h2>
++        {!requests.data?.length && (
++          <p>
++            <I18nText text="Aucune demande en attente." />
++          </p>
++        )}
++        {requests.data?.map((r) => (
++          <article key={r.user_id} className="list-row">
++            <div>
++              <strong>{r.organization_name}</strong>
++              <p className="small">
++                {r.full_name} · {r.email} · {r.phone}
++              </p>
++              <p className="small">
++                <I18nText text="Plan souhaité" /> :{" "}
++                <I18nText text={planLabels[r.desired_plan] ?? r.desired_plan} /> ·{" "}
++                {new Date(r.created_at).toLocaleDateString(intlLocale)}
++              </p>
++            </div>
++            <div className="row-actions">
++              <form action={decideAccount}>
++                <input type="hidden" name="user_id" value={r.user_id} />
++                <input type="hidden" name="decision" value="approve" />
++                <Submit>
++                  <I18nText text="Approuver" />
++                </Submit>
++              </form>
++              <form action={decideAccount}>
++                <input type="hidden" name="user_id" value={r.user_id} />
++                <input type="hidden" name="decision" value="reject" />
++                <Submit>
++                  <I18nText text="Refuser" />
++                </Submit>
++              </form>
++            </div>
++          </article>
++        ))}
++      </section>
++      <section className="card" style={{ marginBottom: 24 }}>
++        <h2>
++          <I18nText text="Virements à vérifier" />
++        </h2>
++        {!payments.data?.length && (
++          <p>
++            <I18nText text="Aucun paiement en attente." />
++          </p>
++        )}
++        {payments.data?.map((p) => {
++          const url = proofs[p.proof_path];
++          return (
++            <article key={p.id} className="section-note" style={{ marginBottom: 18 }}>
++              <strong>
++                {organizations.find((o) => o.id === p.organization_id)?.name ??
++                  "Organisation"}
++              </strong>
++              <p className="small">
++                <I18nText text={planLabels[p.plan] ?? p.plan} /> · {p.months}{" "}
++                <I18nText text="mois" /> · {(p.amount_cents / 100).toLocaleString(intlLocale)} DH
++                {p.reference ? " · " + p.reference : ""} ·{" "}
++                {new Date(p.created_at).toLocaleString(intlLocale)}
++              </p>
++              {url ? (
++                p.proof_path.endsWith(".pdf") ? (
++                  <a href={url} target="_blank" rel="noreferrer" className="text-link">
++                    <I18nText text="Voir la capture du virement" />
++                  </a>
++                ) : (
++                  <a href={url} target="_blank" rel="noreferrer">
++                    {/* eslint-disable-next-line @next/next/no-img-element */}
++                    <img src={url} alt="Virement" className="proof-preview" />
++                  </a>
++                )
++              ) : (
++                <p className="small">
++                  <I18nText text="Capture indisponible (vérifiez SUPABASE_SECRET_KEY)." />
++                </p>
++              )}
++              <div className="row-actions" style={{ marginTop: 12 }}>
++                <form action={reviewPayment}>
++                  <input type="hidden" name="id" value={p.id} />
++                  <input type="hidden" name="decision" value="approve" />
++                  <Submit>
++                    <I18nText text="Valider et prolonger" />
++                  </Submit>
++                </form>
++                <form action={reviewPayment} className="row-actions">
++                  <input type="hidden" name="id" value={p.id} />
++                  <input type="hidden" name="decision" value="reject" />
++                  <LocalizedInput name="note" maxLength={500} placeholder="Motif du refus (facultatif)" />
++                  <Submit>
++                    <I18nText text="Refuser" />
++                  </Submit>
++                </form>
++              </div>
++            </article>
++          );
++        })}
++      </section>
+       <div className="stats">
+         <div className="card">
+           <p>
+@@ -149,6 +284,11 @@ export default async function Page({
+               <details key={o.id}>
+                 <summary>
+                   {o.name} —<I18nText text={String(" ")} />
++                  {sub && (
++                    <>
++                      <I18nText text={planLabels[sub.plan] ?? sub.plan} /> ·{" "}
++                    </>
++                  )}
+                   <I18nText text={sub
+                     ? new Date(sub.ends_at) <= new Date() &&
+                       ["active", "trialing"].includes(sub.status)
+@@ -168,15 +308,15 @@ export default async function Page({
+                   />
+                   <label>
+                     <I18nText text="Offre" />
+-                    <select name="plan" defaultValue={sub?.plan ?? "essentiel"}>
+-                      <option value="essentiel">
+-                        <I18nText text="Essentiel" />
++                    <select name="plan" defaultValue={sub?.plan ?? "essai"}>
++                      <option value="essai">
++                        <I18nText text="Essai gratuit" />
+                       </option>
+-                      <option value="pro">
+-                        <I18nText text="Pro" />
++                      <option value="standard">
++                        <I18nText text="Standard" />
+                       </option>
+-                      <option value="business">
+-                        <I18nText text="Business" />
++                      <option value="entreprise">
++                        <I18nText text="Entreprise" />
+                       </option>
+                     </select>
+                   </label>
+@@ -221,6 +361,52 @@ export default async function Page({
+           })}
+         </div>
+       </section>
++      <section className="card" style={{ marginTop: 24 }}>
++        <h2>
++          <I18nText text="Coordonnées bancaires (RIB)" />
++        </h2>
++        <p>
++          <I18nText text="Affichées aux syndics dans leur page Abonnement." />
++        </p>
++        <form action={saveBilling} className="form">
++          <label>
++            <I18nText text="Titulaire" />
++            <LocalizedInput
++              name="account_holder"
++              maxLength={160}
++              defaultValue={billing.data?.account_holder ?? ""}
++            />
++          </label>
++          <label>
++            <I18nText text="Banque" />
++            <LocalizedInput
++              name="bank_name"
++              maxLength={160}
++              defaultValue={billing.data?.bank_name ?? ""}
++            />
++          </label>
++          <label>
++            <I18nText text="RIB" />
++            <LocalizedInput
++              name="rib"
++              maxLength={64}
++              defaultValue={billing.data?.rib ?? ""}
++            />
++          </label>
++          <label>
++            <I18nText text="Instructions" />
++            <textarea
++              name="instructions"
++              maxLength={1000}
++              rows={3}
++              defaultValue={billing.data?.instructions ?? ""}
++            />
++          </label>
++          <Submit>
++            <I18nText text="Enregistrer le RIB" />
++          </Submit>
++        </form>
++      </section>
+       <section className="card" style={{ marginTop: 24 }}>
+         <h2>
+           <I18nText text="Dernières modifications" />
+@@ -250,7 +436,7 @@ export default async function Page({
+         )}
+       </section>
+       <p className="small" style={{ marginTop: 20 }}>
+-        <I18nText text="Les statuts sont un suivi commercial. Le blocage automatique des opérations et les paiements en ligne ne sont pas activés." />
++        <I18nText text="Les paiements se font par virement bancaire : chaque capture est vérifiée manuellement avant prolongation." />
+       </p>
+     </>
+   );
+diff --git a/src/app/app/abonnement/actions.ts b/src/app/app/abonnement/actions.ts
+new file mode 100644
+index 0000000..9c3231a
+--- /dev/null
++++ b/src/app/app/abonnement/actions.ts
+@@ -0,0 +1,82 @@
++"use server";
++import { randomUUID } from "node:crypto";
++import { z } from "zod";
++import { redirect } from "next/navigation";
++import { revalidatePath } from "next/cache";
++import { signedIn } from "@/lib/access";
++import { provisionClient } from "@/lib/provision";
++import { STANDARD_MONTHLY_CENTS } from "@/lib/plans";
++const PATH = "/app/abonnement";
++const BUCKET = "syndic-payment-proofs";
++const types: Record<string, string> = {
++  "image/png": "png",
++  "image/jpeg": "jpg",
++  "image/webp": "webp",
++  "application/pdf": "pdf",
++};
++function done(text: string): never {
++  revalidatePath(PATH);
++  redirect(PATH + "?message=" + encodeURIComponent(text));
++}
++export async function submitPayment(form: FormData) {
++  const { db, user } = await signedIn();
++  const input = z
++    .object({
++      plan: z.enum(["standard", "entreprise"]),
++      months: z.coerce.number().int().min(1).max(24),
++      amount: z.coerce.number().min(0).max(1000000).optional(),
++      reference: z.string().trim().max(160).default(""),
++    })
++    .safeParse({
++      plan: form.get("plan"),
++      months: form.get("months"),
++      amount: form.get("amount") || undefined,
++      reference: form.get("reference") ?? "",
++    });
++  if (!input.success) done("Vérifiez le plan, la durée et le montant.");
++  const v = input.data;
++  const file = form.get("proof");
++  if (!(file instanceof File) || file.size === 0)
++    done("Ajoutez la capture d’écran de votre virement.");
++  if (file.size > 5 * 1024 * 1024 || !types[file.type])
++    done("Format accepté : image PNG, JPG, WEBP ou PDF de 5 Mo maximum.");
++  const amountCents =
++    v.plan === "standard"
++      ? STANDARD_MONTHLY_CENTS * v.months
++      : Math.round((v.amount ?? 0) * 100);
++  if (amountCents <= 0) done("Indiquez le montant viré.");
++  const { data: membership } = await db
++    .from("syndic_organization_members")
++    .select("organization_id,role")
++    .eq("user_id", user.id)
++    .in("role", ["admin", "manager"])
++    .limit(1);
++  const orgId = membership?.[0]?.organization_id;
++  if (!orgId) redirect("/acces-refuse");
++  const path = `${orgId}/${randomUUID()}.${types[file.type]}`;
++  let ok = false;
++  try {
++    const storage = provisionClient().storage.from(BUCKET);
++    const upload = await storage.upload(path, file, {
++      contentType: file.type,
++      upsert: false,
++    });
++    if (!upload.error) {
++      const { error } = await db.rpc("syndic_submit_subscription_payment", {
++        target_org: orgId,
++        plan_choice: v.plan,
++        month_count: v.months,
++        paid_cents: amountCents,
++        payment_reference: v.reference,
++        proof: path,
++      });
++      ok = !error;
++      if (error) await storage.remove([path]);
++    }
++  } catch {}
++  done(
++    ok
++      ? "Paiement envoyé. Votre abonnement sera prolongé dès la validation du virement."
++      : "Envoi impossible. Vérifiez vos informations (3 paiements en attente maximum) ou réessayez.",
++  );
++}
+diff --git a/src/app/app/abonnement/page.tsx b/src/app/app/abonnement/page.tsx
+new file mode 100644
+index 0000000..1d3b856
+--- /dev/null
++++ b/src/app/app/abonnement/page.tsx
+@@ -0,0 +1,256 @@
++import { intlLocale as getIntlLocale } from "@/lib/locale-server";
++import { I18nText } from "@/components/i18n";
++import { LocalizedInput } from "@/components/i18n-input";
++import { Notice } from "@/components/notice";
++import { Submit } from "@/components/submit";
++import { signedIn } from "@/lib/access";
++import { contact, daysLeft, planLabels } from "@/lib/plans";
++import { submitPayment } from "./actions";
++export const dynamic = "force-dynamic";
++const statusLabels: Record<string, string> = {
++  pending: "En attente de validation",
++  approved: "Validé",
++  rejected: "Refusé",
++};
++export default async function Page({
++  searchParams,
++}: {
++  searchParams: Promise<{ message?: string }>;
++}) {
++  const intlLocale = await getIntlLocale();
++  const { db, user } = await signedIn();
++  const { data: membership } = await db
++    .from("syndic_organization_members")
++    .select("organization_id,role")
++    .eq("user_id", user.id)
++    .limit(1);
++  const orgId = membership?.[0]?.organization_id;
++  const message = (await searchParams).message;
++  if (!orgId)
++    return (
++      <>
++        <h1>
++          <I18nText text="Abonnement" />
++        </h1>
++        <Notice message={message} />
++        <p>
++          <I18nText text="Votre compte n’est associé à aucun syndic." />
++        </p>
++      </>
++    );
++  const [sub, billing, payments] = await Promise.all([
++    db
++      .from("syndic_subscription_records")
++      .select("plan,status,ends_at")
++      .eq("organization_id", orgId)
++      .maybeSingle(),
++    db
++      .from("syndic_billing_settings")
++      .select("account_holder,bank_name,rib,instructions")
++      .maybeSingle(),
++    db
++      .from("syndic_subscription_payments")
++      .select("id,plan,months,amount_cents,reference,status,admin_note,created_at")
++      .eq("organization_id", orgId)
++      .order("created_at", { ascending: false })
++      .limit(20),
++  ]);
++  const s = sub.data;
++  const remaining = s ? daysLeft(s.ends_at) : 0;
++  const active = s && remaining > 0 && ["active", "trialing"].includes(s.status);
++  const fmt = (cents: number) =>
++    (cents / 100).toLocaleString(intlLocale, { maximumFractionDigits: 2 }) +
++    " DH";
++  return (
++    <>
++      <div className="page-heading">
++        <div>
++          <span className="eyebrow">
++            <I18nText text="Espace syndic" />
++          </span>
++          <h1>
++            <I18nText text="Mon abonnement" />
++          </h1>
++          <p>
++            <I18nText text="Consultez votre plan, payez par virement bancaire et suivez vos paiements." />
++          </p>
++        </div>
++      </div>
++      <Notice
++        message={message}
++        error={Boolean(sub.error || billing.error || payments.error)}
++      />
++      <div className="stats">
++        <div className="card">
++          <p>
++            <I18nText text="Plan actuel" />
++          </p>
++          <div className="stat-number">
++            {s ? <I18nText text={planLabels[s.plan] ?? s.plan} /> : "—"}
++          </div>
++        </div>
++        <div className="card">
++          <p>
++            <I18nText text="Jours restants" />
++          </p>
++          <div className="stat-number">{active ? remaining : 0}</div>
++        </div>
++        <div className="card">
++          <p>
++            <I18nText text="Fin de l’abonnement" />
++          </p>
++          <div className="stat-number" style={{ fontSize: 22 }}>
++            {s ? new Date(s.ends_at).toLocaleDateString(intlLocale) : "—"}
++          </div>
++          <span className={"status-pill " + (active ? "ok" : "danger")}>
++            <I18nText text={active ? "Actif" : "Expiré"} />
++          </span>
++        </div>
++      </div>
++      <div className="split">
++        <section className="card">
++          <h2>
++            <I18nText text="Coordonnées bancaires" />
++          </h2>
++          {billing.data?.rib ? (
++            <div className="list">
++              <p>
++                <I18nText text="Titulaire" /> :{" "}
++                <strong>{billing.data.account_holder}</strong>
++              </p>
++              <p>
++                <I18nText text="Banque" /> :{" "}
++                <strong>{billing.data.bank_name}</strong>
++              </p>
++              <p>
++                <I18nText text="RIB" /> :{" "}
++                <strong style={{ overflowWrap: "anywhere" }}>
++                  {billing.data.rib}
++                </strong>
++              </p>
++              {billing.data.instructions && (
++                <p className="small" style={{ whiteSpace: "pre-wrap" }}>
++                  {billing.data.instructions}
++                </p>
++              )}
++            </div>
++          ) : (
++            <p>
++              <I18nText text="Le RIB sera bientôt disponible. Contactez-nous pour l’obtenir." />
++            </p>
++          )}
++          <h3 style={{ marginTop: 20 }}>
++            <I18nText text="Tarifs" />
++          </h3>
++          <p>
++            <I18nText text="Standard : 30 DH par mois." />
++          </p>
++          <p>
++            <I18nText text="Entreprise : prix sur devis." />{" "}
++            <a className="text-link" href={contact.whatsapp}>
++              <I18nText text="WhatsApp" />
++            </a>{" "}
++            · <a href={`tel:${contact.phoneIntl}`}>{contact.phone}</a> ·{" "}
++            <a href={`mailto:${contact.email}`}>{contact.email}</a>
++          </p>
++        </section>
++        <section className="card">
++          <h2>
++            <I18nText text="Payer ou changer d’abonnement" />
++          </h2>
++          <form action={submitPayment} className="form">
++            <label>
++              <I18nText text="Plan" />
++              <select
++                name="plan"
++                defaultValue={s?.plan === "entreprise" ? "entreprise" : "standard"}
++              >
++                <option value="standard">Standard · 30 DH / mois</option>
++                <option value="entreprise">Entreprise · sur devis</option>
++              </select>
++            </label>
++            <label>
++              <I18nText text="Durée" />
++              <select name="months" defaultValue="1">
++                {[1, 3, 6, 12].map((m) => (
++                  <option key={m} value={m}>
++                    {m} · {fmt(3000 * m)} (Standard)
++                  </option>
++                ))}
++              </select>
++            </label>
++            <label>
++              <I18nText text="Montant viré en DH (plan Entreprise uniquement)" />
++              <LocalizedInput
++                name="amount"
++                type="number"
++                min={1}
++                step="0.01"
++              />
++            </label>
++            <label>
++              <I18nText text="Référence du virement (facultatif)" />
++              <LocalizedInput name="reference" maxLength={160} />
++            </label>
++            <label>
++              <I18nText text="Capture d’écran du virement" />
++              <input
++                name="proof"
++                type="file"
++                accept="image/png,image/jpeg,image/webp,application/pdf"
++                required
++              />
++              <span className="form-note">
++                <I18nText text="PNG, JPG, WEBP ou PDF · 5 Mo maximum" />
++              </span>
++            </label>
++            <Submit>
++              <I18nText text="Envoyer le paiement" />
++            </Submit>
++            <p className="form-note">
++              <I18nText text="Le changement de plan et la prolongation s’appliquent dès la validation du virement par notre équipe." />
++            </p>
++          </form>
++        </section>
++      </div>
++      <section className="card" style={{ marginTop: 24 }}>
++        <h2>
++          <I18nText text="Historique des paiements" />
++        </h2>
++        {payments.data?.length ? (
++          payments.data.map((p) => (
++            <div className="list-row" key={p.id}>
++              <div>
++                <strong>
++                  <I18nText text={planLabels[p.plan] ?? p.plan} /> ·{" "}
++                  {p.months} <I18nText text="mois" /> · {fmt(p.amount_cents)}
++                </strong>
++                <p className="small">
++                  {new Date(p.created_at).toLocaleDateString(intlLocale)}
++                  {p.reference ? " · " + p.reference : ""}
++                  {p.admin_note ? " · " + p.admin_note : ""}
++                </p>
++              </div>
++              <span
++                className={
++                  "status-pill " +
++                  (p.status === "approved"
++                    ? "ok"
++                    : p.status === "rejected"
++                      ? "danger"
++                      : "")
++                }
++              >
++                <I18nText text={statusLabels[p.status] ?? p.status} />
++              </span>
++            </div>
++          ))
++        ) : (
++          <p>
++            <I18nText text="Aucun paiement envoyé." />
++          </p>
++        )}
++      </section>
++    </>
++  );
++}
+diff --git a/src/app/app/communaute/actions.ts b/src/app/app/communaute/actions.ts
+index f3d1d5b..7e6ae06 100644
+--- a/src/app/app/communaute/actions.ts
++++ b/src/app/app/communaute/actions.ts
+@@ -91,3 +91,51 @@ export async function publishPost(form: FormData) {
+   if (error) result("Publication refusée. Vérifiez vos droits.");
+   result("Annonce publiée aux résidents de cette résidence.");
+ }
++export async function decideJoinRequest(form: FormData) {
++  const { db } = await signedIn();
++  const input = z
++    .object({ id: z.uuid(), decision: z.enum(["approve", "reject"]) })
++    .safeParse(Object.fromEntries(form));
++  if (!input.success) result("Demande invalide.");
++  const { error } = await db.rpc("syndic_decide_join_request", {
++    target: input.data.id,
++    approve: input.data.decision === "approve",
++  });
++  if (error) result("Décision refusée. Vérifiez vos droits.");
++  result(
++    input.data.decision === "approve"
++      ? "Demande approuvée : l’habitant a maintenant accès à son logement."
++      : "Demande refusée.",
++  );
++}
++export async function moderateResident(form: FormData) {
++  const { db } = await signedIn();
++  const input = z
++    .object({
++      unit: z.uuid(),
++      user: z.uuid(),
++      task: z.enum(["block", "unblock", "remove"]),
++    })
++    .safeParse(Object.fromEntries(form));
++  if (!input.success) result("Action invalide.");
++  const v = input.data;
++  const { error } =
++    v.task === "remove"
++      ? await db.rpc("syndic_remove_resident", {
++          target_unit: v.unit,
++          target_user: v.user,
++        })
++      : await db.rpc("syndic_set_resident_blocked", {
++          target_unit: v.unit,
++          target_user: v.user,
++          blocked: v.task === "block",
++        });
++  if (error) result("Action refusée. Vérifiez vos droits.");
++  result(
++    v.task === "remove"
++      ? "Utilisateur supprimé de votre espace."
++      : v.task === "block"
++        ? "Utilisateur bloqué."
++        : "Utilisateur débloqué.",
++  );
++}
+diff --git a/src/app/app/communaute/page.tsx b/src/app/app/communaute/page.tsx
+index ad38aa9..6a142ba 100644
+--- a/src/app/app/communaute/page.tsx
++++ b/src/app/app/communaute/page.tsx
+@@ -9,6 +9,29 @@ import { provisionResident } from "@/app/admin/provision";
+ import { ShareLink } from "@/components/share-link";
+ import { createJoinLink, revokeJoinLink } from "./actions";
+ import { setupResidence, setupUnit } from "./actions";
++import { decideJoinRequest, moderateResident } from "./actions";
++type People = {
++  residents: {
++    unit_id: string;
++    user_id: string;
++    unit: string;
++    residence: string;
++    email: string;
++    name: string;
++    phone: string;
++    blocked: boolean;
++    revoked: boolean;
++  }[];
++  requests: {
++    id: string;
++    unit: string;
++    residence: string;
++    email: string;
++    name: string;
++    phone: string;
++    created_at: string;
++  }[];
++};
+ export default async function Page({
+   searchParams,
+ }: {
+@@ -20,7 +43,7 @@ export default async function Page({
+     .from("syndic_join_links")
+     .select("id,unit_id,expires_at,used_by,revoked_at")
+     .order("created_at", { ascending: false });
+-  const [invitations, posts] = await Promise.all([
++  const [invitations, posts, peopleResult] = await Promise.all([
+     db
+       .from("syndic_resident_invitations")
+       .select("*")
+@@ -30,7 +53,12 @@ export default async function Page({
+       .select("*")
+       .order("created_at", { ascending: false })
+       .limit(30),
++    db.rpc("syndic_manager_people"),
+   ]);
++  const people = (peopleResult.data ?? {
++    residents: [],
++    requests: [],
++  }) as People;
+   return (
+     <>
+       <div className="page-heading">
+@@ -45,8 +73,109 @@ export default async function Page({
+       </div>
+       <Notice
+         message={(await searchParams).message}
+-        error={data.error || Boolean(invitations.error || posts.error)}
++        error={
++          data.error ||
++          Boolean(invitations.error || posts.error || peopleResult.error)
++        }
+       />
++      <section className="card" style={{ marginBottom: 24 }}>
++        <h2>
++          <I18nText text="Demandes d’adhésion" />
++        </h2>
++        {!people.requests.length && (
++          <p>
++            <I18nText text="Aucune demande en attente." />
++          </p>
++        )}
++        {people.requests.map((r) => (
++          <article key={r.id} className="list-row">
++            <div>
++              <strong>{r.name || r.email}</strong>
++              <p className="small">
++                {r.email} {r.phone ? "· " + r.phone : ""}
++              </p>
++              <p className="small">
++                {r.residence} · {r.unit}
++              </p>
++            </div>
++            <div className="row-actions">
++              <form action={decideJoinRequest}>
++                <input type="hidden" name="id" value={r.id} />
++                <input type="hidden" name="decision" value="approve" />
++                <Submit>
++                  <I18nText text="Approuver" />
++                </Submit>
++              </form>
++              <form action={decideJoinRequest}>
++                <input type="hidden" name="id" value={r.id} />
++                <input type="hidden" name="decision" value="reject" />
++                <Submit>
++                  <I18nText text="Refuser" />
++                </Submit>
++              </form>
++            </div>
++          </article>
++        ))}
++      </section>
++      <section className="card" style={{ marginBottom: 24 }}>
++        <h2>
++          <I18nText text="Utilisateurs de mon espace" />
++        </h2>
++        {!people.residents.length && (
++          <p>
++            <I18nText text="Aucun habitant pour le moment." />
++          </p>
++        )}
++        {people.residents.map((r) => (
++          <article key={r.unit_id + r.user_id} className="list-row">
++            <div>
++              <strong>{r.name || r.email}</strong>
++              <p className="small">
++                {r.email} {r.phone ? "· " + r.phone : ""}
++              </p>
++              <p className="small">
++                {r.residence} · {r.unit} ·{" "}
++                <span
++                  className={
++                    "status-pill " +
++                    (r.blocked || r.revoked ? "danger" : "ok")
++                  }
++                >
++                  <I18nText
++                    text={
++                      r.blocked ? "Bloqué" : r.revoked ? "Révoqué" : "Actif"
++                    }
++                  />
++                </span>
++              </p>
++            </div>
++            <div className="row-actions">
++              {(r.blocked || !r.revoked) && (
++                <form action={moderateResident}>
++                  <input type="hidden" name="unit" value={r.unit_id} />
++                  <input type="hidden" name="user" value={r.user_id} />
++                  <input
++                    type="hidden"
++                    name="task"
++                    value={r.blocked ? "unblock" : "block"}
++                  />
++                  <Submit>
++                    <I18nText text={r.blocked ? "Débloquer" : "Bloquer"} />
++                  </Submit>
++                </form>
++              )}
++              <form action={moderateResident}>
++                <input type="hidden" name="unit" value={r.unit_id} />
++                <input type="hidden" name="user" value={r.user_id} />
++                <input type="hidden" name="task" value="remove" />
++                <Submit>
++                  <I18nText text="Supprimer" />
++                </Submit>
++              </form>
++            </div>
++          </article>
++        ))}
++      </section>
+       <section className="card" style={{ marginBottom: 24 }}>
+         <h2>
+           <I18nText text="Inviter par lien" />
+@@ -169,7 +298,7 @@ export default async function Page({
+                     link.revoked_at
+                       ? "Révoqué"
+                       : link.used_by
+-                        ? "Compte créé"
++                        ? "Lien utilisé"
+                         : new Date(link.expires_at) < new Date()
+                           ? "Expiré"
+                           : "En attente",
+diff --git a/src/app/app/layout.tsx b/src/app/app/layout.tsx
+index 71cad24..996cc1a 100644
+--- a/src/app/app/layout.tsx
++++ b/src/app/app/layout.tsx
+@@ -6,6 +6,7 @@ import { LayoutDashboard, Building2, Grid2X2, ShieldCheck } from "lucide-react";
+ import { Brand } from "@/components/brand";
+ import { supabase } from "@/lib/supabase/server";
+ import { signOut } from "@/app/actions";
++import { daysLeft, planLabels } from "@/lib/plans";
+ export const dynamic = "force-dynamic";
+ export default async function AppLayout({
+   children,
+@@ -17,7 +18,34 @@ export default async function AppLayout({
+     data: { user },
+   } = await db.auth.getUser();
+   if (!user) redirect("/connexion");
+-  const { data: isAdmin } = await db.rpc("syndic_is_platform_admin");
++  const [{ data: isAdmin }, { data: status }, { data: membership }] =
++    await Promise.all([
++      db.rpc("syndic_is_platform_admin"),
++      db.rpc("syndic_my_status"),
++      db
++        .from("syndic_organization_members")
++        .select("organization_id")
++        .eq("user_id", user.id)
++        .limit(1),
++    ]);
++  const orgId = membership?.[0]?.organization_id;
++  const { data: subs } = orgId
++    ? await db
++        .from("syndic_subscription_records")
++        .select("plan,status,ends_at")
++        .eq("organization_id", orgId)
++    : { data: null };
++  if (
++    isAdmin !== true &&
++    !status?.member &&
++    (status?.request === "pending" || status?.request === "rejected")
++  )
++    redirect("/en-attente");
++  const sub = subs?.[0];
++  const remaining = sub ? daysLeft(sub.ends_at) : null;
++  const expired =
++    sub &&
++    (remaining! <= 0 || !["active", "trialing"].includes(sub.status));
+   return (
+     <AppFrame>
+       <div className="container">
+@@ -34,6 +62,9 @@ export default async function AppLayout({
+           <Link href="/app/communaute">
+             <I18nText text="Habitants" />
+           </Link>
++          <Link href="/app/abonnement">
++            <I18nText text="Abonnement" />
++          </Link>
+           {isAdmin === true && (
+             <Link href="/admin">
+               <I18nText text="Administration" />
+@@ -45,7 +76,30 @@ export default async function AppLayout({
+             </button>
+           </form>
+         </nav>
+-        <main className="section">{children}</main>
++        <main className="section">
++          {sub && (
++            <div
++              className="notice subscription-banner"
++              role={expired ? "alert" : "status"}
++            >
++              <I18nText text={planLabels[sub.plan] ?? sub.plan} />
++              {" · "}
++              {expired ? (
++                <I18nText text="Abonnement expiré : renouvelez-le pour continuer." />
++              ) : (
++                <>
++                  <I18nText text="Jours restants :" />
++                  <strong>{remaining}</strong>
++                </>
++              )}
++              {" · "}
++              <Link href="/app/abonnement" className="text-link">
++                <I18nText text="Gérer mon abonnement" />
++              </Link>
++            </div>
++          )}
++          {children}
++        </main>
+       </div>
+     </AppFrame>
+   );
+diff --git a/src/app/connexion/page.tsx b/src/app/connexion/page.tsx
+index c52abc0..3231398 100644
+--- a/src/app/connexion/page.tsx
++++ b/src/app/connexion/page.tsx
+@@ -2,7 +2,11 @@ import { AuthForm } from "@/components/auth-form";
+ export default async function Page({
+   searchParams,
+ }: {
+-  searchParams: Promise<{ message?: string }>;
++  searchParams: Promise<{ message?: string; next?: string }>;
+ }) {
+-  return <AuthForm message={(await searchParams).message} />;
++  const params = await searchParams;
++  const next = /^\/rejoindre\/[0-9a-f-]{36}$/i.test(params.next ?? "")
++    ? params.next
++    : undefined;
++  return <AuthForm message={params.message} next={next} />;
+ }
+diff --git a/src/app/en-attente/page.tsx b/src/app/en-attente/page.tsx
+new file mode 100644
+index 0000000..7dda732
+--- /dev/null
++++ b/src/app/en-attente/page.tsx
+@@ -0,0 +1,119 @@
++import Link from "next/link";
++import { redirect } from "next/navigation";
++import { I18nText } from "@/components/i18n";
++import { LocalizedInput } from "@/components/i18n-input";
++import { Brand } from "@/components/brand";
++import { Notice } from "@/components/notice";
++import { Submit } from "@/components/submit";
++import { signedIn } from "@/lib/access";
++import { signOut, requestSyndicAccount } from "@/app/actions";
++import { contact, plans } from "@/lib/plans";
++export const dynamic = "force-dynamic";
++export default async function Page({
++  searchParams,
++}: {
++  searchParams: Promise<{ message?: string }>;
++}) {
++  const { db, user } = await signedIn();
++  const { data: status } = await db.rpc("syndic_my_status");
++  if (status?.member) redirect("/app");
++  const { data: request } = await db
++    .from("syndic_account_requests")
++    .select("organization_name,status,created_at")
++    .eq("user_id", user.id)
++    .maybeSingle();
++  return (
++    <main className="auth-shell">
++      <section className="card auth-card">
++        <Brand />
++        <Notice message={(await searchParams).message} />
++        {request?.status === "pending" && (
++          <>
++            <span className="eyebrow">
++              <I18nText text="Compte syndic" />
++            </span>
++            <h1>
++              <I18nText text="Votre compte attend l’approbation" />
++            </h1>
++            <p>
++              <I18nText text="Notre équipe vérifie votre demande pour" />
++              <strong>{request.organization_name}</strong>.
++              <I18nText text="Vous pourrez accéder à votre espace syndic dès sa validation." />
++            </p>
++          </>
++        )}
++        {request?.status === "rejected" && (
++          <>
++            <h1>
++              <I18nText text="Demande non validée" />
++            </h1>
++            <p>
++              <I18nText text="Votre demande de compte syndic n’a pas été acceptée. Contactez-nous ou envoyez une nouvelle demande." />
++            </p>
++          </>
++        )}
++        {(!request || request.status === "rejected") && (
++          <form action={requestSyndicAccount} className="form">
++            <h2>
++              <I18nText text="Demander un compte syndic" />
++            </h2>
++            <label>
++              <I18nText text="Nom du syndic / de la société" />
++              <LocalizedInput
++                name="organization"
++                required
++                minLength={2}
++                maxLength={120}
++              />
++            </label>
++            <label>
++              <I18nText text="Téléphone" />
++              <LocalizedInput
++                name="phone"
++                type="tel"
++                required
++                maxLength={24}
++                defaultValue={
++                  typeof user.user_metadata?.phone === "string"
++                    ? user.user_metadata.phone
++                    : ""
++                }
++              />
++            </label>
++            <label>
++              <I18nText text="Plan souhaité" />
++              <select name="plan" defaultValue="essai">
++                {plans.map((plan) => (
++                  <option key={plan.id} value={plan.id}>
++                    {plan.name} · {plan.price}
++                  </option>
++                ))}
++              </select>
++            </label>
++            <Submit>
++              <I18nText text="Envoyer la demande" />
++            </Submit>
++          </form>
++        )}
++        <p className="small" style={{ marginTop: 24 }}>
++          <I18nText text="Besoin d’aide ?" />
++          <a className="text-link" href={contact.whatsapp}>
++            <I18nText text="WhatsApp" />
++          </a>
++          · <a href={`tel:${contact.phoneIntl}`}>{contact.phone}</a> ·{" "}
++          <a href={`mailto:${contact.email}`}>{contact.email}</a>
++        </p>
++        <div className="row-actions" style={{ marginTop: 16 }}>
++          <Link href="/resident" className="button outline">
++            <I18nText text="Mon espace résident" />
++          </Link>
++          <form action={signOut}>
++            <button className="text-link">
++              <I18nText text="Déconnexion" />
++            </button>
++          </form>
++        </div>
++      </section>
++    </main>
++  );
++}
+diff --git a/src/app/globals.css b/src/app/globals.css
+index 57b5fff..52674a4 100644
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -1284,3 +1284,165 @@ details p {
+     padding: 22px 16px;
+   }
+ }
++
++.landing-pricing {
++  max-width: 1180px;
++  margin: auto;
++  padding: 40px 32px 90px;
++}
++.landing-pricing > .eyebrow {
++  color: #5b7b5b;
++}
++.landing-pricing > p {
++  color: #718071;
++  max-width: 560px;
++}
++.pricing-grid {
++  display: grid;
++  grid-template-columns: repeat(3, 1fr);
++  gap: 24px;
++  margin-top: 40px;
++}
++.pricing-grid article {
++  border: 1px solid #d7e0d0;
++  border-radius: 24px;
++  padding: 30px;
++  display: flex;
++  flex-direction: column;
++  gap: 18px;
++  background: #fff;
++}
++.pricing-grid article.featured {
++  border: 2px solid #123e34;
++  box-shadow: 0 18px 40px rgba(18, 62, 52, 0.12);
++}
++.pricing-grid h3 {
++  margin: 0;
++  font-size: 20px;
++}
++.pricing-grid .price strong {
++  display: block;
++  font-size: 34px;
++  letter-spacing: -1px;
++}
++.pricing-grid .price span {
++  color: #718071;
++  font-size: 14px;
++}
++.pricing-grid ul {
++  list-style: none;
++  padding: 0;
++  margin: 0;
++  display: grid;
++  gap: 10px;
++  flex: 1;
++  font-size: 14px;
++}
++.pricing-grid li {
++  display: flex;
++  gap: 8px;
++  align-items: flex-start;
++}
++.pricing-grid li svg {
++  color: #54864f;
++  flex-shrink: 0;
++  margin-top: 2px;
++}
++.landing-contact {
++  max-width: 1240px;
++  margin: 0 auto;
++  padding: 50px 65px;
++  border-radius: 30px;
++  background: #edf2e5;
++  display: grid;
++  grid-template-columns: 1fr 1fr;
++  gap: 40px;
++  align-items: center;
++}
++.contact-links {
++  display: grid;
++  gap: 14px;
++}
++.contact-links a {
++  display: flex;
++  align-items: center;
++  gap: 12px;
++  background: #fff;
++  border-radius: 16px;
++  padding: 16px 20px;
++  font-weight: 600;
++  overflow-wrap: anywhere;
++}
++.landing-cta .actions {
++  display: flex;
++  gap: 12px;
++  flex-wrap: wrap;
++}
++.plan-choice {
++  display: grid;
++  gap: 10px;
++}
++.plan-choice input {
++  width: auto !important;
++  flex: 0 0 auto;
++}
++.plan-choice label {
++  flex-direction: row !important;
++  justify-content: flex-start;
++  display: flex;
++  gap: 10px;
++  align-items: center;
++  border: 1px solid var(--line);
++  border-radius: 12px;
++  padding: 12px 14px;
++}
++.checkbox-row {
++  display: flex !important;
++  flex-direction: row !important;
++  gap: 10px;
++  align-items: center;
++}
++.checkbox-row input {
++  width: auto !important;
++}
++.subscription-banner {
++  margin-bottom: 18px;
++}
++.proof-preview {
++  max-width: 100%;
++  max-height: 420px;
++  border-radius: 12px;
++  border: 1px solid var(--line);
++  margin-top: 10px;
++}
++.status-pill {
++  display: inline-block;
++  padding: 2px 10px;
++  border-radius: 999px;
++  font-size: 12px;
++  background: #eef2ff;
++}
++.status-pill.danger {
++  background: #fee2e2;
++}
++.status-pill.ok {
++  background: #dcfce7;
++}
++.row-actions {
++  display: flex;
++  gap: 8px;
++  flex-wrap: wrap;
++}
++@media (max-width: 800px) {
++  .pricing-grid {
++    grid-template-columns: 1fr;
++  }
++  .landing-pricing {
++    padding: 30px 16px 60px;
++  }
++  .landing-contact {
++    margin: 0 16px;
++    padding: 35px 25px;
++    grid-template-columns: 1fr;
++  }
++}
+diff --git a/src/app/inscription/page.tsx b/src/app/inscription/page.tsx
+index 8c6f980..826bbaf 100644
+--- a/src/app/inscription/page.tsx
++++ b/src/app/inscription/page.tsx
+@@ -1,10 +1,44 @@
+-import { redirect } from "next/navigation";
++import Link from "next/link";
++import { I18nText } from "@/components/i18n";
++import { Brand } from "@/components/brand";
++import { Notice } from "@/components/notice";
++import { SignUpForm } from "@/components/signup-form";
++export const dynamic = "force-dynamic";
+ export default async function Page({
+   searchParams,
+ }: {
+-  searchParams: Promise<{ message?: string }>;
++  searchParams: Promise<{ message?: string; syndic?: string; next?: string }>;
+ }) {
+-  redirect(
+-    "/connexion?message=Les%20comptes%20sont%20créés%20par%20votre%20administrateur%20ou%20votre%20syndic.",
++  const params = await searchParams;
++  const next = /^\/rejoindre\/[0-9a-f-]{36}$/i.test(params.next ?? "")
++    ? params.next
++    : undefined;
++  return (
++    <main className="auth-shell">
++      <div className="card auth-card">
++        <Brand />
++        <h1>
++          <I18nText text="Créer votre compte" />
++        </h1>
++        <p>
++          <I18nText text="Habitant ou syndic, créez votre compte en une minute." />
++        </p>
++        <Notice message={params.message} />
++        <SignUpForm syndic={params.syndic === "1"} next={next} />
++        <p className="small" style={{ marginTop: 24 }}>
++          <I18nText text="Vous avez déjà un compte ?" />
++          <Link
++            className="text-link"
++            href={
++              next
++                ? `/connexion?next=${encodeURIComponent(next)}`
++                : "/connexion"
++            }
++          >
++            <I18nText text="Se connecter" />
++          </Link>
++        </p>
++      </div>
++    </main>
+   );
+ }
+diff --git a/src/app/page.tsx b/src/app/page.tsx
+index 361fb54..c06f31e 100644
+--- a/src/app/page.tsx
++++ b/src/app/page.tsx
+@@ -9,7 +9,11 @@ import {
+   ShieldCheck,
+   CalendarDays,
+   ChevronRight,
++  Check,
++  Mail,
++  Phone,
+ } from "lucide-react";
++import { plans, contact } from "@/lib/plans";
+ import { Brand } from "@/components/brand";
+ import { currentLocale } from "@/lib/locale-server";
+ export default async function Home() {
+@@ -25,6 +29,12 @@ export default async function Home() {
+           <a href="#comment">
+             <I18nText text="Comment ça marche" />
+           </a>
++          <a href="#tarifs">
++            <I18nText text="Tarifs" />
++          </a>
++          <Link href="/inscription">
++            <I18nText text="Créer un compte" />
++          </Link>
+           <Link href="/connexion" className="button primary">
+             <I18nText text="Mon espace" />
+             <ArrowUpRight size={17} />
+@@ -179,16 +189,105 @@ export default async function Home() {
+             </article>
+           </div>
+         </section>
++        <section className="landing-pricing" id="tarifs">
++          <span className="eyebrow">
++            <I18nText text="Tarifs" />
++          </span>
++          <h2>
++            <I18nText text="Un plan pour chaque syndic." />
++          </h2>
++          <p>
++            <I18nText text="Commencez gratuitement pendant un mois. Le compte des habitants est toujours gratuit." />
++          </p>
++          <div className="pricing-grid">
++            {plans.map((plan) => (
++              <article
++                key={plan.id}
++                className={plan.id === "standard" ? "featured" : ""}
++              >
++                <h3>
++                  <I18nText text={plan.name} />
++                </h3>
++                <div className="price">
++                  <strong>
++                    <I18nText text={plan.price} />
++                  </strong>
++                  <span>
++                    <I18nText text={plan.period} />
++                  </span>
++                </div>
++                <ul>
++                  {plan.features.map((feature) => (
++                    <li key={feature}>
++                      <Check size={16} />
++                      <I18nText text={feature} />
++                    </li>
++                  ))}
++                </ul>
++                {plan.id === "entreprise" ? (
++                  <a href="#contact" className="button outline">
++                    <I18nText text="Contacter l’entreprise" />
++                  </a>
++                ) : (
++                  <Link
++                    href="/inscription?syndic=1"
++                    className="button primary"
++                  >
++                    <I18nText
++                      text={
++                        plan.id === "essai"
++                          ? "Commencer l’essai gratuit"
++                          : "Choisir Standard"
++                      }
++                    />
++                  </Link>
++                )}
++              </article>
++            ))}
++          </div>
++        </section>
++        <section className="landing-contact" id="contact">
++          <div>
++            <span className="eyebrow">
++              <I18nText text="Contact" />
++            </span>
++            <h2>
++              <I18nText text="Parlons de votre résidence." />
++            </h2>
++            <p>
++              <I18nText text="Une question, une offre Entreprise ? Notre équipe vous répond." />
++            </p>
++          </div>
++          <div className="contact-links">
++            <a href={`mailto:${contact.email}`}>
++              <Mail size={20} />
++              {contact.email}
++            </a>
++            <a href={`tel:${contact.phoneIntl}`}>
++              <Phone size={20} />
++              {contact.phone}
++            </a>
++            <a href={contact.whatsapp} target="_blank" rel="noopener noreferrer">
++              <MessageCircle size={20} />
++              <I18nText text="WhatsApp" />
++            </a>
++          </div>
++        </section>
+         <section className="landing-cta">
+           <h2>
+             <I18nText text="Votre résidence." />
+             <br />
+             <I18nText text="Votre nouvel espace commun." />
+           </h2>
+-          <Link href="/connexion" className="button light">
+-            <I18nText text="Se connecter" />
+-            <ArrowUpRight size={18} />
+-          </Link>
++          <div className="actions">
++            <Link href="/inscription" className="button light">
++              <I18nText text="Créer un compte" />
++              <ArrowUpRight size={18} />
++            </Link>
++            <Link href="/connexion" className="button light">
++              <I18nText text="Se connecter" />
++            </Link>
++          </div>
+         </section>
+       </main>
+       <footer className="landing-footer">
+diff --git a/src/app/rejoindre/[token]/actions.ts b/src/app/rejoindre/[token]/actions.ts
+index 16f89a8..6f43851 100644
+--- a/src/app/rejoindre/[token]/actions.ts
++++ b/src/app/rejoindre/[token]/actions.ts
+@@ -57,7 +57,7 @@ export async function joinResidence(form: FormData) {
+       });
+     } else {
+       created = true;
+-      const complete = await service.rpc("syndic_finish_join_link", {
++      const complete = await service.rpc("syndic_request_join_link", {
+         token: v.token,
+         attempt,
+         account_id: result.data.user.id,
+@@ -71,8 +71,8 @@ export async function joinResidence(form: FormData) {
+         "?message=" +
+         encodeURIComponent(
+           created
+-            ? "Votre compte existe, mais son association doit être terminée par votre syndic. Contactez-le."
+-            : "Création impossible. Cette adresse peut déjà posséder un compte. Contactez votre syndic.",
++            ? "Votre compte est créé, mais la demande n’a pas pu être envoyée. Connectez-vous puis rouvrez le lien."
++            : "Création impossible. Cette adresse possède peut-être déjà un compte : connectez-vous pour rejoindre la résidence.",
+         ),
+     );
+   const db = await supabase();
+@@ -83,6 +83,33 @@ export async function joinResidence(form: FormData) {
+   redirect(
+     error
+       ? "/connexion?message=Votre%20compte%20est%20créé.%20Connectez-vous."
+-      : "/operations",
++      : "/resident?message=" + encodeURIComponent(sent),
+   );
+ }
++const sent =
++  "Demande envoyée. Votre syndic doit l’approuver avant l’ouverture de votre accès.";
++export async function joinWithAccount(form: FormData) {
++  const token = z.uuid().safeParse(form.get("token"));
++  if (!token.success) redirect("/connexion");
++  const db = await supabase();
++  const {
++    data: { user },
++  } = await db.auth.getUser();
++  if (!user)
++    redirect(
++      "/connexion?next=" + encodeURIComponent("/rejoindre/" + token.data),
++    );
++  const { error } = await db.rpc("syndic_request_join", {
++    token: token.data,
++  });
++  if (error)
++    redirect(
++      "/rejoindre/" +
++        token.data +
++        "?message=" +
++        encodeURIComponent(
++          "Demande impossible : lien déjà utilisé, expiré, ou vous avez déjà accès à ce logement.",
++        ),
++    );
++  redirect("/resident?message=" + encodeURIComponent(sent));
++}
+diff --git a/src/app/rejoindre/[token]/page.tsx b/src/app/rejoindre/[token]/page.tsx
+index 3da7a27..9ef3346 100644
+--- a/src/app/rejoindre/[token]/page.tsx
++++ b/src/app/rejoindre/[token]/page.tsx
+@@ -6,7 +6,8 @@ import { provisionClient } from "@/lib/provision";
+ import { Brand } from "@/components/brand";
+ import { Submit } from "@/components/submit";
+ import { Notice } from "@/components/notice";
+-import { joinResidence } from "./actions";
++import { joinResidence, joinWithAccount } from "./actions";
++import { supabase } from "@/lib/supabase/server";
+ export const dynamic = "force-dynamic";
+ export default async function Page({
+   params,
+@@ -16,6 +17,10 @@ export default async function Page({
+   searchParams: Promise<{ message?: string }>;
+ }) {
+   const { token } = await params;
++  const session = await supabase();
++  const {
++    data: { user },
++  } = await session.auth.getUser();
+   let residence = "";
+   let manager = "";
+   try {
+@@ -73,6 +78,31 @@ export default async function Page({
+               <strong>{manager}</strong>.
+             </p>
+             <Notice message={(await searchParams).message} />
++            <p className="form-note">
++              <I18nText text="Votre syndic validera votre demande avant l’ouverture de votre accès." />
++            </p>
++            {user ? (
++              <form action={joinWithAccount} className="form">
++                <input type="hidden" name="token" value={token} />
++                <p>
++                  <I18nText text="Connecté en tant que" />
++                  <strong>{user.email}</strong>
++                </p>
++                <Submit>
++                  <I18nText text="Rejoindre avec mon compte" />
++                </Submit>
++              </form>
++            ) : (
++            <>
++            <div className="notice">
++              <I18nText text="Vous avez déjà un compte ?" />
++              <Link
++                className="text-link"
++                href={`/connexion?next=${encodeURIComponent("/rejoindre/" + token)}`}
++              >
++                <I18nText text="Se connecter pour rejoindre" />
++              </Link>
++            </div>
+             <form action={joinResidence} className="form">
+               <LocalizedInput type="hidden" name="token" value={token} />
+               <label>
+@@ -143,6 +173,8 @@ export default async function Page({
+                 <I18nText text="Rejoindre ma résidence" />
+               </Submit>
+             </form>
++            </>
++            )}
+           </>
+         ) : (
+           <>
+diff --git a/src/app/resident/page.tsx b/src/app/resident/page.tsx
+index 968e821..f269ed3 100644
+--- a/src/app/resident/page.tsx
++++ b/src/app/resident/page.tsx
+@@ -33,7 +33,7 @@ export default async function Page({
+   const intlLocale = await getIntlLocale();
+ 
+   const { db, user } = await signedIn();
+-  const [space, invitations] = await Promise.all([
++  const [space, invitations, requests] = await Promise.all([
+     db.rpc("syndic_my_resident_space"),
+     db
+       .from("syndic_resident_invitations")
+@@ -42,7 +42,14 @@ export default async function Page({
+       .is("revoked_at", null)
+       .is("accepted_at", null)
+       .gt("expires_at", new Date().toISOString()),
++    db.rpc("syndic_my_join_requests"),
+   ]);
++  const myRequests = ((requests.data ?? []) as {
++    id: string;
++    status: string;
++    unit: string;
++    residence: string;
++  }[]).filter((r) => r.status !== "approved");
+   const data = (space.data ?? { units: [], posts: [] }) as ResidentSpace;
+   return (
+     <div className="container">
+@@ -72,6 +79,22 @@ export default async function Page({
+           message={(await searchParams).message}
+           error={Boolean(space.error || invitations.error)}
+         />
++        {myRequests.map((r) => (
++          <section key={r.id} className="card" style={{ marginBottom: 20 }}>
++            <h2>
++              {r.residence} · {r.unit}
++            </h2>
++            <p>
++              <I18nText
++                text={
++                  r.status === "pending"
++                    ? "Demande d’adhésion en attente de validation par votre syndic."
++                    : "Votre demande d’adhésion a été refusée. Contactez votre syndic."
++                }
++              />
++            </p>
++          </section>
++        ))}
+         {invitations.data?.map((i) => (
+           <section key={i.id} className="card" style={{ marginBottom: 20 }}>
+             <h2>
+@@ -106,6 +129,11 @@ export default async function Page({
+             <p>
+               <I18nText text="Demandez une invitation à l’adresse de votre compte. Aucun lot n’est encore associé à votre compte." />
+             </p>
++            <p>
++              <Link href="/en-attente" className="text-link">
++                <I18nText text="Vous êtes syndic ? Demander un compte syndic" />
++              </Link>
++            </p>
+           </section>
+         )}
+         <section style={{ marginTop: 32 }}>
+diff --git a/src/components/auth-form.tsx b/src/components/auth-form.tsx
+index bbbdc8a..9cbf1b8 100644
+--- a/src/components/auth-form.tsx
++++ b/src/components/auth-form.tsx
+@@ -7,9 +7,11 @@ import { signIn, signUp, resetPassword } from "@/app/actions";
+ export function AuthForm({
+   signup = false,
+   message,
++  next,
+ }: {
+   signup?: boolean;
+   message?: string;
++  next?: string;
+ }) {
+   return (
+     <main className="auth-shell">
+@@ -37,6 +39,7 @@ export function AuthForm({
+           </div>
+         )}
+         <form action={signup ? signUp : signIn} className="form">
++          {next && <input type="hidden" name="next" value={next} />}
+           <label>
+             <I18nText text="Adresse e-mail" />
+             <LocalizedInput
+@@ -70,13 +73,19 @@ export function AuthForm({
+           </Submit>
+         </form>
+         <p className="small" style={{ marginTop: 24 }}>
+-          <I18nText text="Votre compte est fourni par votre administrateur ou votre syndic." />
++          <I18nText text="Pas encore de compte ?" />
+           <Link
+             className="text-link"
+-            href={signup ? "/connexion" : "/inscription"}
++            href={
++              signup
++                ? "/connexion"
++                : next
++                  ? `/inscription?next=${encodeURIComponent(next)}`
++                  : "/inscription"
++            }
+           >
+             <I18nText
+-              text={String(signup ? "Se connecter" : "Accès sur autorisation")}
++              text={String(signup ? "Se connecter" : "Créer un compte")}
+             />
+           </Link>
+         </p>
+diff --git a/src/components/i18n.tsx b/src/components/i18n.tsx
+index b3f178b..5d57f6f 100644
+--- a/src/components/i18n.tsx
++++ b/src/components/i18n.tsx
+@@ -26,7 +26,7 @@ export function I18nText({ text }: { text: string }) {
+ }
+ export function SystemNotification({ text }: { text: string }) {
+   const locale = useLocale();
+-  const prefixes = ["Nouvelle cotisation : ", "Nouvelle réunion : ", "Réunion dans les prochaines 24 heures : ", "Incident déclaré : ", "Suivi de votre incident : "];
++  const prefixes = ["Nouvelle cotisation : ", "Nouvelle réunion : ", "Réunion dans les prochaines 24 heures : ", "Incident déclaré : ", "Suivi de votre incident : ", "Nouveau compte syndic à approuver : ", "Nouveau virement à vérifier : "];
+   const prefix = prefixes.find((value) => text.startsWith(value));
+   return <>{prefix ? translate(prefix.trim(), locale) + " " + text.slice(prefix.length) : translate(text, locale)}</>;
+ }
+diff --git a/src/components/signup-form.tsx b/src/components/signup-form.tsx
+new file mode 100644
+index 0000000..105a445
+--- /dev/null
++++ b/src/components/signup-form.tsx
+@@ -0,0 +1,136 @@
++"use client";
++import { useState } from "react";
++import { I18nText } from "@/components/i18n";
++import { LocalizedInput } from "@/components/i18n-input";
++import { Submit } from "@/components/submit";
++import { signUp } from "@/app/actions";
++import { plans } from "@/lib/plans";
++export function SignUpForm({
++  syndic: initialSyndic,
++  next,
++}: {
++  syndic: boolean;
++  next?: string;
++}) {
++  const [syndic, setSyndic] = useState(initialSyndic);
++  return (
++    <form action={signUp} className="form">
++      {next && <input type="hidden" name="next" value={next} />}
++      <label>
++        <I18nText text="Prénom" />
++        <LocalizedInput
++          name="first_name"
++          autoComplete="given-name"
++          required
++          minLength={2}
++          maxLength={80}
++        />
++      </label>
++      <label>
++        <I18nText text="Nom" />
++        <LocalizedInput
++          name="last_name"
++          autoComplete="family-name"
++          required
++          minLength={2}
++          maxLength={80}
++        />
++      </label>
++      <label>
++        <I18nText text="Téléphone" />
++        <LocalizedInput
++          name="phone"
++          type="tel"
++          autoComplete="tel"
++          required
++          maxLength={24}
++        />
++      </label>
++      <label>
++        <I18nText text="Adresse e-mail" />
++        <LocalizedInput
++          name="email"
++          type="email"
++          autoComplete="email"
++          required
++          maxLength={254}
++        />
++      </label>
++      <label>
++        <I18nText text="Mot de passe" />
++        <LocalizedInput
++          name="password"
++          type="password"
++          autoComplete="new-password"
++          required
++          minLength={12}
++          maxLength={128}
++        />
++        <span className="form-note">
++          <I18nText text="12 caractères minimum" />
++        </span>
++      </label>
++      <label>
++        <I18nText text="Confirmer le mot de passe" />
++        <LocalizedInput
++          name="confirmation"
++          type="password"
++          autoComplete="new-password"
++          required
++          minLength={12}
++          maxLength={128}
++        />
++      </label>
++      {!next && (
++        <label className="checkbox-row">
++          <input
++            type="checkbox"
++            name="syndic"
++            checked={syndic}
++            onChange={(event) => setSyndic(event.target.checked)}
++          />
++          <I18nText text="Je suis syndic (gestionnaire de résidence)" />
++        </label>
++      )}
++      {syndic && !next && (
++        <>
++          <p className="form-note">
++            <I18nText text="Les comptes syndic sont validés par notre équipe avant activation. Vous commencez par un essai gratuit d’un mois." />
++          </p>
++          <label>
++            <I18nText text="Nom du syndic / de la société" />
++            <LocalizedInput
++              name="organization"
++              required
++              minLength={2}
++              maxLength={120}
++            />
++          </label>
++          <fieldset className="plan-choice">
++            <legend>
++              <I18nText text="Plan souhaité" />
++            </legend>
++            {plans.map((plan, index) => (
++              <label key={plan.id}>
++                <input
++                  type="radio"
++                  name="plan"
++                  value={plan.id}
++                  defaultChecked={index === 0}
++                />
++                <span>
++                  <I18nText text={plan.name} />
++                  {" · "}
++                  <I18nText text={plan.price} />
++                </span>
++              </label>
++            ))}
++          </fieldset>
++        </>
++      )}
++      <Submit>
++        <I18nText text="Créer mon compte" />
++      </Submit>
++    </form>
++  );
++}
+diff --git a/src/lib/plans.ts b/src/lib/plans.ts
+new file mode 100644
+index 0000000..dcafa49
+--- /dev/null
++++ b/src/lib/plans.ts
+@@ -0,0 +1,53 @@
++export const contact = {
++  email: "aliadigital.info@gmail.com",
++  phone: "0693700583",
++  phoneIntl: "+212693700583",
++  whatsapp: "https://wa.me/212693700583",
++};
++export const STANDARD_MONTHLY_CENTS = 3000;
++export const plans = [
++  {
++    id: "essai",
++    name: "Essai gratuit",
++    price: "0 DH",
++    period: "pendant 1 mois",
++    features: [
++      "Toutes les fonctionnalités",
++      "Résidences et appartements illimités",
++      "Sans engagement",
++    ],
++  },
++  {
++    id: "standard",
++    name: "Standard",
++    price: "30 DH",
++    period: "par mois",
++    features: [
++      "Invitations des habitants par lien",
++      "Cotisations, messages et réunions",
++      "Suivi des incidents",
++    ],
++  },
++  {
++    id: "entreprise",
++    name: "Entreprise",
++    price: "Sur devis",
++    period: "Contactez-nous",
++    features: [
++      "Plusieurs résidences et gestionnaires",
++      "Accompagnement personnalisé",
++      "Tarif adapté à votre parc",
++    ],
++  },
++] as const;
++export const planLabels: Record<string, string> = {
++  essai: "Essai gratuit",
++  standard: "Standard",
++  entreprise: "Entreprise",
++  essentiel: "Essentiel",
++  pro: "Pro",
++  business: "Business",
++};
++export function daysLeft(endsAt: string) {
++  return Math.ceil((new Date(endsAt).getTime() - Date.now()) / 86400000);
++}
+diff --git a/src/lib/translations-data.json b/src/lib/translations-data.json
+index 97b42f1..2e8f654 100644
+--- a/src/lib/translations-data.json
++++ b/src/lib/translations-data.json
+@@ -633,5 +633,115 @@
+     "ar": "إقامتك، بكل شفافية.",
+     "en": "Your residence, with full transparency."
+   },
+-  "Connexion": { "ar": "تسجيل الدخول", "en": "Sign in" }
++  "Connexion": { "ar": "تسجيل الدخول", "en": "Sign in" },
++  "À traiter :": { "ar": "للمعالجة:", "en": "To review:" },
++  "compte(s) syndic": { "ar": "حساب(ات) سانديك", "en": "syndic account(s)" },
++  "virement(s)": { "ar": "تحويل(ات)", "en": "transfer(s)" },
++  "Comptes syndic en attente d’approbation": { "ar": "حسابات السانديك في انتظار الموافقة", "en": "Syndic accounts awaiting approval" },
++  "Aucune demande en attente.": { "ar": "لا توجد طلبات معلقة.", "en": "No pending requests." },
++  "Plan souhaité": { "ar": "الباقة المطلوبة", "en": "Desired plan" },
++  "Approuver": { "ar": "موافقة", "en": "Approve" },
++  "Refuser": { "ar": "رفض", "en": "Reject" },
++  "Virements à vérifier": { "ar": "تحويلات للتحقق", "en": "Transfers to verify" },
++  "Aucun paiement en attente.": { "ar": "لا توجد دفعات معلقة.", "en": "No pending payments." },
++  "mois": { "ar": "شهر", "en": "months" },
++  "Voir la capture du virement": { "ar": "عرض صورة التحويل", "en": "View transfer screenshot" },
++  "Capture indisponible (vérifiez SUPABASE_SECRET_KEY).": { "ar": "الصورة غير متاحة (تحقق من SUPABASE_SECRET_KEY).", "en": "Screenshot unavailable (check SUPABASE_SECRET_KEY)." },
++  "Valider et prolonger": { "ar": "تأكيد وتمديد", "en": "Approve and extend" },
++  "Essai gratuit": { "ar": "تجربة مجانية", "en": "Free trial" },
++  "Standard": { "ar": "عادي", "en": "Standard" },
++  "Entreprise": { "ar": "مؤسسة", "en": "Enterprise" },
++  "Coordonnées bancaires (RIB)": { "ar": "المعلومات البنكية (RIB)", "en": "Bank details (RIB)" },
++  "Affichées aux syndics dans leur page Abonnement.": { "ar": "تظهر للسانديك في صفحة الاشتراك.", "en": "Shown to syndics on their Subscription page." },
++  "Titulaire": { "ar": "صاحب الحساب", "en": "Account holder" },
++  "Banque": { "ar": "البنك", "en": "Bank" },
++  "RIB": { "ar": "RIB", "en": "RIB" },
++  "Instructions": { "ar": "تعليمات", "en": "Instructions" },
++  "Enregistrer le RIB": { "ar": "حفظ RIB", "en": "Save RIB" },
++  "Les paiements se font par virement bancaire : chaque capture est vérifiée manuellement avant prolongation.": { "ar": "الدفع يتم بتحويل بنكي: يتم التحقق من كل صورة يدوياً قبل التمديد.", "en": "Payments are made by bank transfer: each screenshot is checked manually before extension." },
++  "Abonnement": { "ar": "الاشتراك", "en": "Subscription" },
++  "Votre compte n’est associé à aucun syndic.": { "ar": "حسابك غير مرتبط بأي سانديك.", "en": "Your account is not linked to any syndic." },
++  "Mon abonnement": { "ar": "اشتراكي", "en": "My subscription" },
++  "Consultez votre plan, payez par virement bancaire et suivez vos paiements.": { "ar": "اطلع على باقتك، ادفع بتحويل بنكي وتابع مدفوعاتك.", "en": "View your plan, pay by bank transfer and track your payments." },
++  "Plan actuel": { "ar": "الباقة الحالية", "en": "Current plan" },
++  "Jours restants": { "ar": "الأيام المتبقية", "en": "Days left" },
++  "Fin de l’abonnement": { "ar": "نهاية الاشتراك", "en": "Subscription end" },
++  "Coordonnées bancaires": { "ar": "المعلومات البنكية", "en": "Bank details" },
++  "Le RIB sera bientôt disponible. Contactez-nous pour l’obtenir.": { "ar": "سيتوفر RIB قريباً. تواصل معنا للحصول عليه.", "en": "The RIB will be available soon. Contact us to get it." },
++  "Tarifs": { "ar": "الأسعار", "en": "Pricing" },
++  "Standard : 30 DH par mois.": { "ar": "عادي: 30 درهم شهرياً.", "en": "Standard: 30 MAD per month." },
++  "Entreprise : prix sur devis.": { "ar": "مؤسسة: السعر حسب العرض.", "en": "Enterprise: price on quote." },
++  "WhatsApp": { "ar": "واتساب", "en": "WhatsApp" },
++  "Payer ou changer d’abonnement": { "ar": "الدفع أو تغيير الاشتراك", "en": "Pay or change subscription" },
++  "Plan": { "ar": "الباقة", "en": "Plan" },
++  "Durée": { "ar": "المدة", "en": "Duration" },
++  "Montant viré en DH (plan Entreprise uniquement)": { "ar": "المبلغ المحول بالدرهم (باقة المؤسسة فقط)", "en": "Amount transferred in MAD (Enterprise plan only)" },
++  "Référence du virement (facultatif)": { "ar": "مرجع التحويل (اختياري)", "en": "Transfer reference (optional)" },
++  "Capture d’écran du virement": { "ar": "صورة شاشة التحويل", "en": "Transfer screenshot" },
++  "PNG, JPG, WEBP ou PDF · 5 Mo maximum": { "ar": "PNG أو JPG أو WEBP أو PDF · 5 ميغابايت كحد أقصى", "en": "PNG, JPG, WEBP or PDF · 5 MB maximum" },
++  "Envoyer le paiement": { "ar": "إرسال الدفعة", "en": "Send payment" },
++  "Le changement de plan et la prolongation s’appliquent dès la validation du virement par notre équipe.": { "ar": "يتم تطبيق تغيير الباقة والتمديد فور تأكيد التحويل من طرف فريقنا.", "en": "Plan change and extension apply once our team validates the transfer." },
++  "Historique des paiements": { "ar": "سجل المدفوعات", "en": "Payment history" },
++  "Aucun paiement envoyé.": { "ar": "لم يتم إرسال أي دفعة.", "en": "No payment sent." },
++  "Demandes d’adhésion": { "ar": "طلبات الانضمام", "en": "Join requests" },
++  "Utilisateurs de mon espace": { "ar": "مستخدمو فضائي", "en": "Users of my space" },
++  "Aucun habitant pour le moment.": { "ar": "لا يوجد سكان حالياً.", "en": "No residents yet." },
++  "Supprimer": { "ar": "حذف", "en": "Delete" },
++  "Bloquer": { "ar": "حظر", "en": "Block" },
++  "Débloquer": { "ar": "إلغاء الحظر", "en": "Unblock" },
++  "Bloqué": { "ar": "محظور", "en": "Blocked" },
++  "Lien utilisé": { "ar": "تم استخدام الرابط", "en": "Link used" },
++  "Abonnement expiré : renouvelez-le pour continuer.": { "ar": "انتهى الاشتراك: جدده للمتابعة.", "en": "Subscription expired: renew it to continue." },
++  "Jours restants :": { "ar": "الأيام المتبقية:", "en": "Days left:" },
++  "Gérer mon abonnement": { "ar": "إدارة اشتراكي", "en": "Manage my subscription" },
++  "Compte syndic": { "ar": "حساب السانديك", "en": "Syndic account" },
++  "Votre compte attend l’approbation": { "ar": "حسابك في انتظار الموافقة", "en": "Your account is awaiting approval" },
++  "Notre équipe vérifie votre demande pour": { "ar": "فريقنا يتحقق من طلبك لـ", "en": "Our team is reviewing your request for" },
++  "Vous pourrez accéder à votre espace syndic dès sa validation.": { "ar": "ستتمكن من الوصول إلى فضاء السانديك فور الموافقة.", "en": "You will access your syndic space once approved." },
++  "Demande non validée": { "ar": "لم تتم الموافقة على الطلب", "en": "Request not approved" },
++  "Votre demande de compte syndic n’a pas été acceptée. Contactez-nous ou envoyez une nouvelle demande.": { "ar": "لم يتم قبول طلب حساب السانديك. تواصل معنا أو أرسل طلباً جديداً.", "en": "Your syndic account request was not accepted. Contact us or send a new request." },
++  "Demander un compte syndic": { "ar": "طلب حساب سانديك", "en": "Request a syndic account" },
++  "Nom du syndic / de la société": { "ar": "اسم السانديك / الشركة", "en": "Syndic / company name" },
++  "Envoyer la demande": { "ar": "إرسال الطلب", "en": "Send request" },
++  "Besoin d’aide ?": { "ar": "تحتاج مساعدة؟", "en": "Need help?" },
++  "Créer votre compte": { "ar": "أنشئ حسابك", "en": "Create your account" },
++  "Habitant ou syndic, créez votre compte en une minute.": { "ar": "ساكن أو سانديك، أنشئ حسابك في دقيقة.", "en": "Resident or syndic, create your account in a minute." },
++  "Vous avez déjà un compte ?": { "ar": "لديك حساب بالفعل؟", "en": "Already have an account?" },
++  "Créer un compte": { "ar": "إنشاء حساب", "en": "Create an account" },
++  "Un plan pour chaque syndic.": { "ar": "باقة لكل سانديك.", "en": "A plan for every syndic." },
++  "Commencez gratuitement pendant un mois. Le compte des habitants est toujours gratuit.": { "ar": "ابدأ مجاناً لمدة شهر. حساب السكان مجاني دائماً.", "en": "Start free for one month. Resident accounts are always free." },
++  "Contacter l’entreprise": { "ar": "التواصل مع الشركة", "en": "Contact us" },
++  "Contact": { "ar": "اتصل بنا", "en": "Contact" },
++  "Parlons de votre résidence.": { "ar": "لنتحدث عن إقامتك.", "en": "Let's talk about your residence." },
++  "Une question, une offre Entreprise ? Notre équipe vous répond.": { "ar": "سؤال أو عرض للمؤسسات؟ فريقنا يجيبك.", "en": "A question or an Enterprise offer? Our team answers." },
++  "Votre syndic validera votre demande avant l’ouverture de votre accès.": { "ar": "سيؤكد السانديك طلبك قبل فتح وصولك.", "en": "Your syndic will approve your request before opening your access." },
++  "Connecté en tant que": { "ar": "متصل باسم", "en": "Signed in as" },
++  "Rejoindre avec mon compte": { "ar": "الانضمام بحسابي", "en": "Join with my account" },
++  "Se connecter pour rejoindre": { "ar": "تسجيل الدخول للانضمام", "en": "Sign in to join" },
++  "Vous êtes syndic ? Demander un compte syndic": { "ar": "هل أنت سانديك؟ اطلب حساب سانديك", "en": "Are you a syndic? Request a syndic account" },
++  "Pas encore de compte ?": { "ar": "ليس لديك حساب بعد؟", "en": "No account yet?" },
++  "Je suis syndic (gestionnaire de résidence)": { "ar": "أنا سانديك (مسير إقامة)", "en": "I am a syndic (residence manager)" },
++  "Les comptes syndic sont validés par notre équipe avant activation. Vous commencez par un essai gratuit d’un mois.": { "ar": "يتم التحقق من حسابات السانديك من طرف فريقنا قبل التفعيل. تبدأ بتجربة مجانية لمدة شهر.", "en": "Syndic accounts are approved by our team before activation. You start with a one-month free trial." },
++  "0 DH": { "ar": "0 درهم", "en": "0 MAD" },
++  "30 DH": { "ar": "30 درهم", "en": "30 MAD" },
++  "Sur devis": { "ar": "حسب العرض", "en": "On quote" },
++  "pendant 1 mois": { "ar": "لمدة شهر", "en": "for 1 month" },
++  "par mois": { "ar": "شهرياً", "en": "per month" },
++  "Contactez-nous": { "ar": "تواصل معنا", "en": "Contact us" },
++  "Toutes les fonctionnalités": { "ar": "جميع الميزات", "en": "All features" },
++  "Résidences et appartements illimités": { "ar": "إقامات وشقق غير محدودة", "en": "Unlimited residences and apartments" },
++  "Sans engagement": { "ar": "بدون التزام", "en": "No commitment" },
++  "Invitations des habitants par lien": { "ar": "دعوة السكان عبر رابط", "en": "Invite residents by link" },
++  "Cotisations, messages et réunions": { "ar": "المساهمات والرسائل والاجتماعات", "en": "Contributions, messages and meetings" },
++  "Suivi des incidents": { "ar": "تتبع الحوادث", "en": "Incident tracking" },
++  "Plusieurs résidences et gestionnaires": { "ar": "عدة إقامات ومسيرين", "en": "Several residences and managers" },
++  "Accompagnement personnalisé": { "ar": "مرافقة شخصية", "en": "Personal support" },
++  "Tarif adapté à votre parc": { "ar": "سعر ملائم لعقاراتك", "en": "Pricing adapted to your portfolio" },
++  "Commencer l’essai gratuit": { "ar": "ابدأ التجربة المجانية", "en": "Start the free trial" },
++  "Choisir Standard": { "ar": "اختر العادي", "en": "Choose Standard" },
++  "En attente de validation": { "ar": "في انتظار التأكيد", "en": "Awaiting validation" },
++  "Validé": { "ar": "مؤكد", "en": "Approved" },
++  "Refusé": { "ar": "مرفوض", "en": "Rejected" },
++  "Demande d’adhésion en attente de validation par votre syndic.": { "ar": "طلب الانضمام في انتظار موافقة السانديك.", "en": "Join request awaiting your syndic's approval." },
++  "Votre demande d’adhésion a été refusée. Contactez votre syndic.": { "ar": "تم رفض طلب انضمامك. تواصل مع السانديك.", "en": "Your join request was rejected. Contact your syndic." }
+ }
+diff --git a/src/lib/translations-errors.json b/src/lib/translations-errors.json
+index ae83e59..dc0242e 100644
+--- a/src/lib/translations-errors.json
++++ b/src/lib/translations-errors.json
+@@ -334,5 +334,145 @@
+   "Code invalide ou expiré. Demandez un nouveau code.": {
+     "ar": "الرمز غير صالح أو منتهي الصلاحية. اطلب رمزًا جديدًا.",
+     "en": "Invalid or expired code. Request a new code."
++  },
++  "Demande envoyée. Votre syndic doit l’approuver avant l’ouverture de votre accès.": {
++    "ar": "تم إرسال الطلب. يجب أن يوافق السانديك قبل فتح وصولك.",
++    "en": "Request sent. Your syndic must approve it before your access opens."
++  },
++  "Bienvenue ! Votre compte est créé.": {
++    "ar": "مرحباً! تم إنشاء حسابك.",
++    "en": "Welcome! Your account has been created."
++  },
++  "Vérifiez vos informations et le nom de votre syndic.": {
++    "ar": "تحقق من معلوماتك واسم السانديك.",
++    "en": "Check your details and your syndic name."
++  },
++  "Création impossible. Cette adresse possède peut-être déjà un compte : connectez-vous.": {
++    "ar": "تعذر الإنشاء. قد يكون لهذا البريد حساب بالفعل: سجل الدخول.",
++    "en": "Unable to create. This address may already have an account: sign in."
++  },
++  "Votre compte est créé, mais la demande syndic n’a pas pu être enregistrée. Réessayez ci-dessous.": {
++    "ar": "تم إنشاء حسابك، لكن تعذر تسجيل طلب السانديك. أعد المحاولة أدناه.",
++    "en": "Your account is created, but the syndic request could not be saved. Try again below."
++  },
++  "Demande impossible : une demande est déjà en cours ou votre compte est déjà syndic.": {
++    "ar": "تعذر الطلب: يوجد طلب قيد المعالجة أو حسابك سانديك بالفعل.",
++    "en": "Request impossible: a request is already pending or your account is already a syndic."
++  },
++  "Demande envoyée. Vous serez notifié après validation.": {
++    "ar": "تم إرسال الطلب. سيتم إشعارك بعد الموافقة.",
++    "en": "Request sent. You will be notified after approval."
++  },
++  "Demande impossible : lien déjà utilisé, expiré, ou vous avez déjà accès à ce logement.": {
++    "ar": "تعذر الطلب: الرابط مستعمل أو منتهي، أو لديك وصول لهذا السكن.",
++    "en": "Request impossible: link already used, expired, or you already have access to this home."
++  },
++  "Votre compte est créé, mais la demande n’a pas pu être envoyée. Connectez-vous puis rouvrez le lien.": {
++    "ar": "تم إنشاء حسابك، لكن تعذر إرسال الطلب. سجل الدخول ثم افتح الرابط مجدداً.",
++    "en": "Your account is created, but the request could not be sent. Sign in and reopen the link."
++  },
++  "Création impossible. Cette adresse possède peut-être déjà un compte : connectez-vous pour rejoindre la résidence.": {
++    "ar": "تعذر الإنشاء. قد يكون لهذا البريد حساب: سجل الدخول للانضمام إلى الإقامة.",
++    "en": "Unable to create. This address may already have an account: sign in to join the residence."
++  },
++  "Paiement envoyé. Votre abonnement sera prolongé dès la validation du virement.": {
++    "ar": "تم إرسال الدفعة. سيتم تمديد اشتراكك فور تأكيد التحويل.",
++    "en": "Payment sent. Your subscription will be extended once the transfer is validated."
++  },
++  "Envoi impossible. Vérifiez vos informations (3 paiements en attente maximum) ou réessayez.": {
++    "ar": "تعذر الإرسال. تحقق من معلوماتك (3 دفعات معلقة كحد أقصى) أو أعد المحاولة.",
++    "en": "Unable to send. Check your details (3 pending payments maximum) or try again."
++  },
++  "Ajoutez la capture d’écran de votre virement.": {
++    "ar": "أضف صورة شاشة التحويل.",
++    "en": "Add the screenshot of your transfer."
++  },
++  "Format accepté : image PNG, JPG, WEBP ou PDF de 5 Mo maximum.": {
++    "ar": "الصيغ المقبولة: PNG أو JPG أو WEBP أو PDF بحد أقصى 5 ميغابايت.",
++    "en": "Accepted: PNG, JPG, WEBP or PDF up to 5 MB."
++  },
++  "Vérifiez le plan, la durée et le montant.": {
++    "ar": "تحقق من الباقة والمدة والمبلغ.",
++    "en": "Check the plan, duration and amount."
++  },
++  "Indiquez le montant viré.": {
++    "ar": "أدخل المبلغ المحول.",
++    "en": "Enter the amount transferred."
++  },
++  "Compte syndic approuvé : essai gratuit d’un mois activé.": {
++    "ar": "تمت الموافقة على حساب السانديك: تم تفعيل تجربة مجانية لمدة شهر.",
++    "en": "Syndic account approved: one-month free trial activated."
++  },
++  "Demande de compte syndic refusée.": {
++    "ar": "تم رفض طلب حساب السانديك.",
++    "en": "Syndic account request rejected."
++  },
++  "Paiement validé : abonnement prolongé.": {
++    "ar": "تم تأكيد الدفعة: تم تمديد الاشتراك.",
++    "en": "Payment approved: subscription extended."
++  },
++  "Paiement refusé.": {
++    "ar": "تم رفض الدفعة.",
++    "en": "Payment rejected."
++  },
++  "Coordonnées bancaires enregistrées.": {
++    "ar": "تم حفظ المعلومات البنكية.",
++    "en": "Bank details saved."
++  },
++  "Demande approuvée : l’habitant a maintenant accès à son logement.": {
++    "ar": "تمت الموافقة: لدى الساكن الآن وصول إلى سكنه.",
++    "en": "Request approved: the resident now has access to their home."
++  },
++  "Demande refusée.": {
++    "ar": "تم رفض الطلب.",
++    "en": "Request rejected."
++  },
++  "Utilisateur supprimé de votre espace.": {
++    "ar": "تم حذف المستخدم من فضائك.",
++    "en": "User removed from your space."
++  },
++  "Utilisateur bloqué.": {
++    "ar": "تم حظر المستخدم.",
++    "en": "User blocked."
++  },
++  "Utilisateur débloqué.": {
++    "ar": "تم إلغاء حظر المستخدم.",
++    "en": "User unblocked."
++  },
++  "Action refusée. Vérifiez vos droits.": {
++    "ar": "تم رفض الإجراء. تحقق من صلاحياتك.",
++    "en": "Action refused. Check your rights."
++  },
++  "Nouveau compte syndic à approuver :": {
++    "ar": "حساب سانديك جديد للموافقة:",
++    "en": "New syndic account to approve:"
++  },
++  "Nouveau virement à vérifier :": {
++    "ar": "تحويل جديد للتحقق:",
++    "en": "New transfer to verify:"
++  },
++  "Paiement validé : abonnement prolongé": {
++    "ar": "تم تأكيد الدفعة: تم تمديد الاشتراك",
++    "en": "Payment approved: subscription extended"
++  },
++  "Paiement refusé : contactez le support": {
++    "ar": "تم رفض الدفعة: تواصل مع الدعم",
++    "en": "Payment rejected: contact support"
++  },
++  "Nouvelle demande d'adhésion à valider": {
++    "ar": "طلب انضمام جديد للموافقة",
++    "en": "New join request to approve"
++  },
++  "Votre demande d'adhésion est acceptée": {
++    "ar": "تم قبول طلب انضمامك",
++    "en": "Your join request was accepted"
++  },
++  "Votre demande d'adhésion a été refusée": {
++    "ar": "تم رفض طلب انضمامك",
++    "en": "Your join request was rejected"
++  },
++  "Votre compte syndic est approuvé : essai gratuit d'un mois": {
++    "ar": "تمت الموافقة على حساب السانديك: تجربة مجانية لمدة شهر",
++    "en": "Your syndic account is approved: one-month free trial"
+   }
+ }
+diff --git a/src/lib/validation.ts b/src/lib/validation.ts
+index db0970a..6469b9b 100644
+--- a/src/lib/validation.ts
++++ b/src/lib/validation.ts
+@@ -18,3 +18,15 @@ export const unitSchema = z.object({
+   kind: z.enum(["apartment", "shop", "parking"]),
+   share: z.coerce.number().positive().max(1000000),
+ });
++export const signUpSchema = z.object({
++  first_name: z.string().trim().min(2).max(80),
++  last_name: z.string().trim().min(2).max(80),
++  phone: z
++    .string()
++    .trim()
++    .regex(/^\+?[0-9 ()-]{8,24}$/),
++  email: z.email(),
++  password: z.string().min(12).max(128),
++  organization: z.string().trim().min(1).max(120),
++  plan: z.enum(["essai", "standard", "entreprise"]),
++});
+diff --git a/src/proxy.ts b/src/proxy.ts
+index b6d64b0..3874ec9 100644
+--- a/src/proxy.ts
++++ b/src/proxy.ts
+@@ -35,6 +35,7 @@ export const config = {
+     "/connexion",
+     "/reinitialiser-mot-de-passe",
+     "/inscription",
++    "/en-attente",
+     "/auth/:path*",
+   ],
+ };
+diff --git a/supabase/migrations/202611110001_signup_billing.sql b/supabase/migrations/202611110001_signup_billing.sql
+new file mode 100644
+index 0000000..a3b11fb
+--- /dev/null
++++ b/supabase/migrations/202611110001_signup_billing.sql
+@@ -0,0 +1,297 @@
++-- Public sign-up, syndic approval, join requests, resident moderation and subscription payments by bank transfer.
++-- Additive except: widened CHECK constraints (plans, inbox links) and one nullable column on syndic_resident_access.
++begin;
++
++-- Plans: free trial (1 month), standard (30 MAD / month), entreprise (on quote). Legacy values stay valid.
++alter table public.syndic_subscription_records drop constraint syndic_subscription_records_plan_check;
++alter table public.syndic_subscription_records add constraint syndic_subscription_records_plan_check
++ check(plan in ('essentiel','pro','business','essai','standard','entreprise'));
++alter table public.syndic_inbox drop constraint syndic_inbox_link_check;
++alter table public.syndic_inbox add constraint syndic_inbox_link_check
++ check(link in ('/resident','/operations','/app/abonnement','/app/communaute','/admin'));
++
++-- 1. Syndic account requests (approved by a platform admin) ------------------------------------
++create table public.syndic_account_requests (
++ user_id uuid primary key references auth.users(id) on delete cascade,
++ email text not null,
++ full_name text not null check(char_length(trim(full_name)) between 2 and 160),
++ phone text not null check(char_length(trim(phone)) between 6 and 24),
++ organization_name text not null check(char_length(trim(organization_name)) between 2 and 120),
++ desired_plan text not null check(desired_plan in ('essai','standard','entreprise')),
++ status text not null default 'pending' check(status in ('pending','approved','rejected')),
++ organization_id uuid references public.syndic_organizations(id),
++ created_at timestamptz not null default now(),
++ decided_at timestamptz, decided_by uuid references auth.users(id)
++);
++alter table public.syndic_account_requests enable row level security;
++revoke all on public.syndic_account_requests from anon,authenticated;
++grant select on public.syndic_account_requests to authenticated;
++create policy syndic_account_request_read on public.syndic_account_requests for select to authenticated
++ using(user_id=auth.uid() or public.syndic_is_platform_admin());
++
++create function public.syndic_request_syndic_account(organization text,plan_choice text,person_name text,person_phone text) returns void
++language plpgsql security definer set search_path='' as $$
++declare mail text;
++begin
++ if auth.uid() is null then raise exception 'Authentication required'; end if;
++ if exists(select 1 from public.syndic_organization_members where user_id=auth.uid()) then raise exception 'Already a syndic'; end if;
++ select lower(email) into mail from auth.users where id=auth.uid();
++ insert into public.syndic_account_requests(user_id,email,full_name,phone,organization_name,desired_plan)
++ values(auth.uid(),mail,trim(person_name),trim(person_phone),trim(organization),plan_choice)
++ on conflict(user_id) do update set organization_name=excluded.organization_name,desired_plan=excluded.desired_plan,
++  full_name=excluded.full_name,phone=excluded.phone,status='pending',created_at=now(),decided_at=null,decided_by=null
++ where public.syndic_account_requests.status='rejected';
++ if not found then raise exception 'Request already exists'; end if;
++ insert into public.syndic_inbox(user_id,title,link,dedupe_key)
++ select a.user_id,'Nouveau compte syndic à approuver : '||trim(organization),'/admin','account:'||auth.uid()||':'||now()
++ from public.syndic_platform_admins a on conflict do nothing;
++end;$$;
++
++create function public.syndic_admin_decide_account(target uuid,approve boolean) returns uuid
++language plpgsql security definer set search_path='' as $$
++declare req public.syndic_account_requests; oid uuid; rec jsonb;
++begin
++ if not public.syndic_is_platform_admin() then raise exception 'Forbidden'; end if;
++ select * into req from public.syndic_account_requests where user_id=target for update;
++ if not found or req.status<>'pending' then raise exception 'No pending request'; end if;
++ if not approve then
++  update public.syndic_account_requests set status='rejected',decided_at=now(),decided_by=auth.uid() where user_id=target;
++  return null;
++ end if;
++ insert into public.syndic_organizations(name,created_by) values(req.organization_name,target) returning id into oid;
++ insert into public.syndic_organization_members(organization_id,user_id,role) values(oid,target,'admin');
++ insert into public.syndic_subscription_records(organization_id,plan,status,ends_at,note,updated_by)
++ values(oid,'essai','trialing',now()+interval '1 month','Essai gratuit d''un mois (compte approuvé)',auth.uid());
++ select to_jsonb(s) into rec from public.syndic_subscription_records s where organization_id=oid;
++ insert into public.syndic_subscription_history(organization_id,actor_id,previous_value,new_value) values(oid,auth.uid(),null,rec);
++ update public.syndic_account_requests set status='approved',organization_id=oid,decided_at=now(),decided_by=auth.uid() where user_id=target;
++ insert into public.syndic_inbox(user_id,title,link,dedupe_key) values(target,'Votre compte syndic est approuvé : essai gratuit d''un mois','/app/abonnement','account-approved:'||oid);
++ return oid;
++end;$$;
++
++-- Account overview used for redirects after sign-in.
++create function public.syndic_my_status() returns jsonb language sql stable security definer set search_path='' as $$
++ select jsonb_build_object(
++  'admin',public.syndic_is_platform_admin(),
++  'member',exists(select 1 from public.syndic_organization_members where user_id=auth.uid()),
++  'resident',exists(select 1 from public.syndic_resident_access where user_id=auth.uid() and revoked_at is null),
++  'request',(select status from public.syndic_account_requests where user_id=auth.uid()));
++$$;
++
++-- 2. Bank details shown to syndics (edited by the platform admin) -----------------------------
++create table public.syndic_billing_settings (
++ id boolean primary key default true check(id),
++ account_holder text not null default '' check(char_length(account_holder)<=160),
++ bank_name text not null default '' check(char_length(bank_name)<=160),
++ rib text not null default '' check(char_length(rib)<=64),
++ instructions text not null default '' check(char_length(instructions)<=1000),
++ updated_at timestamptz not null default now()
++);
++insert into public.syndic_billing_settings(id) values(true);
++alter table public.syndic_billing_settings enable row level security;
++revoke all on public.syndic_billing_settings from anon,authenticated;
++grant select on public.syndic_billing_settings to authenticated;
++create policy syndic_billing_read on public.syndic_billing_settings for select to authenticated using(true);
++create function public.syndic_admin_set_billing(holder text,bank text,account_rib text,notes text) returns void
++language plpgsql security definer set search_path='' as $$
++begin
++ if not public.syndic_is_platform_admin() then raise exception 'Forbidden'; end if;
++ update public.syndic_billing_settings set account_holder=trim(holder),bank_name=trim(bank),rib=trim(account_rib),instructions=trim(notes),updated_at=now() where id;
++end;$$;
++
++-- 3. Subscription payments by bank transfer, validated by the platform admin -------------------
++create table public.syndic_subscription_payments (
++ id uuid primary key default gen_random_uuid(),
++ organization_id uuid not null references public.syndic_organizations(id),
++ plan text not null check(plan in ('standard','entreprise')),
++ months integer not null check(months between 1 and 24),
++ amount_cents bigint not null check(amount_cents>0 and amount_cents<=100000000),
++ reference text not null default '' check(char_length(reference)<=160),
++ proof_path text not null check(char_length(proof_path) between 5 and 300),
++ submitted_by uuid not null references auth.users(id),
++ status text not null default 'pending' check(status in ('pending','approved','rejected')),
++ admin_note text not null default '' check(char_length(admin_note)<=500),
++ created_at timestamptz not null default now(),
++ reviewed_at timestamptz, reviewed_by uuid references auth.users(id)
++);
++create index syndic_sub_payments_org_idx on public.syndic_subscription_payments(organization_id,created_at);
++alter table public.syndic_subscription_payments enable row level security;
++revoke all on public.syndic_subscription_payments from anon,authenticated;
++grant select on public.syndic_subscription_payments to authenticated;
++create policy syndic_sub_payment_read on public.syndic_subscription_payments for select to authenticated
++ using(public.syndic_is_platform_admin() or exists(select 1 from public.syndic_organization_members m where m.organization_id=syndic_subscription_payments.organization_id and m.user_id=auth.uid()));
++
++create function public.syndic_submit_subscription_payment(target_org uuid,plan_choice text,month_count integer,paid_cents bigint,payment_reference text,proof text) returns uuid
++language plpgsql security definer set search_path='' as $$
++declare pid uuid; org_name text;
++begin
++ if not exists(select 1 from public.syndic_organization_members where organization_id=target_org and user_id=auth.uid() and role in ('admin','manager')) then raise exception 'Forbidden'; end if;
++ if proof is null or left(proof,char_length(target_org::text)+1)<>target_org::text||'/' then raise exception 'Invalid proof'; end if;
++ if plan_choice='standard' and paid_cents<>3000*month_count then raise exception 'Invalid amount'; end if;
++ if (select count(*) from public.syndic_subscription_payments where organization_id=target_org and status='pending')>=3 then raise exception 'Too many pending payments'; end if;
++ insert into public.syndic_subscription_payments(organization_id,plan,months,amount_cents,reference,proof_path,submitted_by)
++ values(target_org,plan_choice,month_count,paid_cents,trim(coalesce(payment_reference,'')),proof,auth.uid()) returning id into pid;
++ select name into org_name from public.syndic_organizations where id=target_org;
++ insert into public.syndic_inbox(user_id,title,link,dedupe_key)
++ select a.user_id,'Nouveau virement à vérifier : '||org_name,'/admin','payment-submitted:'||pid from public.syndic_platform_admins a;
++ return pid;
++end;$$;
++
++create function public.syndic_admin_review_payment(target uuid,approve boolean,note text) returns void
++language plpgsql security definer set search_path='' as $$
++declare p public.syndic_subscription_payments; old_record jsonb; new_record jsonb; base timestamptz;
++begin
++ if not public.syndic_is_platform_admin() then raise exception 'Forbidden'; end if;
++ select * into p from public.syndic_subscription_payments where id=target for update;
++ if not found or p.status<>'pending' then raise exception 'Payment already reviewed'; end if;
++ update public.syndic_subscription_payments set status=case when approve then 'approved' else 'rejected' end,
++  admin_note=trim(coalesce(note,'')),reviewed_at=now(),reviewed_by=auth.uid() where id=target;
++ if approve then
++  perform 1 from public.syndic_organizations where id=p.organization_id for update;
++  select to_jsonb(s) into old_record from public.syndic_subscription_records s where organization_id=p.organization_id;
++  select greatest(now(),coalesce((select ends_at from public.syndic_subscription_records where organization_id=p.organization_id and status in ('active','trialing')),now())) into base;
++  insert into public.syndic_subscription_records(organization_id,plan,status,ends_at,note,updated_by)
++  values(p.organization_id,p.plan,'active',base+make_interval(months=>p.months),'Virement validé (paiement '||p.id||')',auth.uid())
++  on conflict(organization_id) do update set plan=excluded.plan,status=excluded.status,ends_at=excluded.ends_at,note=excluded.note,updated_by=excluded.updated_by,updated_at=now();
++  select to_jsonb(s) into new_record from public.syndic_subscription_records s where organization_id=p.organization_id;
++  insert into public.syndic_subscription_history(organization_id,actor_id,previous_value,new_value) values(p.organization_id,auth.uid(),old_record,new_record);
++ end if;
++ insert into public.syndic_inbox(user_id,title,link,dedupe_key)
++ select m.user_id,case when approve then 'Paiement validé : abonnement prolongé' else 'Paiement refusé : contactez le support' end,'/app/abonnement','payment-review:'||p.id
++ from public.syndic_organization_members m where m.organization_id=p.organization_id and m.role in ('admin','manager') on conflict do nothing;
++end;$$;
++
++-- 4. Join requests: a link (new or existing account) creates a request the syndic approves ------
++create table public.syndic_join_requests (
++ id uuid primary key default gen_random_uuid(),
++ link_id uuid not null unique references public.syndic_join_links(id),
++ unit_id uuid not null references public.syndic_units(id),
++ user_id uuid not null references auth.users(id),
++ status text not null default 'pending' check(status in ('pending','approved','rejected')),
++ invitation_id uuid references public.syndic_resident_invitations(id),
++ created_at timestamptz not null default now(), decided_at timestamptz, decided_by uuid references auth.users(id)
++);
++alter table public.syndic_join_requests enable row level security;
++revoke all on public.syndic_join_requests from anon,authenticated;
++grant select on public.syndic_join_requests to authenticated;
++create policy syndic_join_request_read on public.syndic_join_requests for select to authenticated
++ using(user_id=auth.uid() or exists(select 1 from public.syndic_units u where u.id=unit_id and public.syndic_manages_residence(u.residence_id)));
++
++-- Internal helper: consume a valid link for an account and create the pending request.
++create function public.syndic_link_to_request(token uuid,attempt uuid,account_id uuid) returns uuid
++language plpgsql security definer set search_path='' as $$
++declare link public.syndic_join_links; rid uuid; residence uuid;
++begin
++ select * into link from public.syndic_join_links where id=token for update;
++ if not found or link.used_by is not null or link.revoked_at is not null or link.expires_at<=now() then raise exception 'Invalid invitation'; end if;
++ if attempt is null and link.reserved_until is not null and link.reserved_until>now() then raise exception 'Invitation in use'; end if;
++ if attempt is not null and (link.reservation is distinct from attempt or link.reserved_until<=now()) then raise exception 'Invalid invitation'; end if;
++ if exists(select 1 from public.syndic_resident_access where unit_id=link.unit_id and user_id=account_id and revoked_at is null) then raise exception 'Already a resident'; end if;
++ insert into public.syndic_join_requests(link_id,unit_id,user_id) values(token,link.unit_id,account_id) returning id into rid;
++ update public.syndic_join_links set used_by=account_id,reservation=null,reserved_until=null where id=token;
++ select residence_id into residence from public.syndic_units where id=link.unit_id;
++ insert into public.syndic_inbox(user_id,title,link,dedupe_key)
++ select m.user_id,'Nouvelle demande d''adhésion à valider','/app/communaute','join-request:'||rid
++ from public.syndic_organization_members m join public.syndic_residences r on r.organization_id=m.organization_id
++ where r.id=residence and m.role in ('admin','manager');
++ return rid;
++end;$$;
++-- Server (service role) path: new account created through the Auth API after reserving the link.
++create function public.syndic_request_join_link(token uuid,attempt uuid,account_id uuid) returns uuid
++language sql security definer set search_path='' as $$ select public.syndic_link_to_request(token,attempt,account_id); $$;
++-- Signed-in path: an existing account joins with the link.
++create function public.syndic_request_join(token uuid) returns uuid
++language plpgsql security definer set search_path='' as $$
++begin
++ if auth.uid() is null then raise exception 'Authentication required'; end if;
++ return public.syndic_link_to_request(token,null,auth.uid());
++end;$$;
++
++create function public.syndic_decide_join_request(target uuid,approve boolean) returns void
++language plpgsql security definer set search_path='' as $$
++declare req public.syndic_join_requests; residence uuid; mail text; invitation uuid;
++begin
++ select * into req from public.syndic_join_requests where id=target for update;
++ if not found then raise exception 'Unknown request'; end if;
++ select residence_id into residence from public.syndic_units where id=req.unit_id;
++ if not public.syndic_manages_residence(residence) then raise exception 'Forbidden'; end if;
++ if req.status<>'pending' then raise exception 'Already decided'; end if;
++ if approve then
++  select lower(email) into mail from auth.users where id=req.user_id;
++  insert into public.syndic_resident_invitations(unit_id,email,invited_by,accepted_at) values(req.unit_id,coalesce(mail,'inconnu@invalid'),auth.uid(),now()) returning id into invitation;
++  insert into public.syndic_resident_access(unit_id,user_id,invitation_id) values(req.unit_id,req.user_id,invitation)
++  on conflict(unit_id,user_id) do update set invitation_id=excluded.invitation_id,revoked_at=null,blocked_at=null;
++  update public.syndic_join_links set invitation_id=invitation where id=req.link_id;
++ end if;
++ update public.syndic_join_requests set status=case when approve then 'approved' else 'rejected' end,invitation_id=invitation,decided_at=now(),decided_by=auth.uid() where id=target;
++ insert into public.syndic_inbox(user_id,unit_id,title,link,dedupe_key)
++ values(req.user_id,case when approve then req.unit_id end,case when approve then 'Votre demande d''adhésion est acceptée' else 'Votre demande d''adhésion a été refusée' end,'/resident','join-decision:'||req.id);
++end;$$;
++
++-- 5. Resident moderation: block / unblock / remove -------------------------------------------
++alter table public.syndic_resident_access add column blocked_at timestamptz;
++create function public.syndic_set_resident_blocked(target_unit uuid,target_user uuid,blocked boolean) returns void
++language plpgsql security definer set search_path='' as $$
++declare residence uuid;
++begin
++ select residence_id into residence from public.syndic_units where id=target_unit;
++ if not public.syndic_manages_residence(residence) then raise exception 'Forbidden'; end if;
++ if blocked then
++  update public.syndic_resident_access set blocked_at=now(),revoked_at=now() where unit_id=target_unit and user_id=target_user and revoked_at is null;
++ else
++  update public.syndic_resident_access set blocked_at=null,revoked_at=null where unit_id=target_unit and user_id=target_user and blocked_at is not null;
++ end if;
++ if not found then raise exception 'Nothing to update'; end if;
++end;$$;
++create function public.syndic_remove_resident(target_unit uuid,target_user uuid) returns void
++language plpgsql security definer set search_path='' as $$
++declare residence uuid; inv uuid;
++begin
++ select residence_id into residence from public.syndic_units where id=target_unit;
++ if not public.syndic_manages_residence(residence) then raise exception 'Forbidden'; end if;
++ delete from public.syndic_resident_access where unit_id=target_unit and user_id=target_user returning invitation_id into inv;
++ if not found then raise exception 'Unknown resident'; end if;
++ update public.syndic_resident_invitations set revoked_at=coalesce(revoked_at,now()) where id=inv;
++end;$$;
++
++-- People overview for syndics (residents + pending requests) with contact details from Auth.
++create function public.syndic_manager_people() returns jsonb language sql stable security definer set search_path='' as $$
++ select jsonb_build_object(
++ 'residents',coalesce((select jsonb_agg(jsonb_build_object('unit_id',a.unit_id,'user_id',a.user_id,'unit',u.label,'residence',r.name,
++   'email',au.email,'name',trim(coalesce(au.raw_user_meta_data->>'first_name','')||' '||coalesce(au.raw_user_meta_data->>'last_name','')),
++   'phone',coalesce(au.raw_user_meta_data->>'phone',''),'blocked',a.blocked_at is not null,'revoked',a.revoked_at is not null,'since',a.created_at) order by r.name,u.label)
++  from public.syndic_resident_access a join public.syndic_units u on u.id=a.unit_id join public.syndic_residences r on r.id=u.residence_id join auth.users au on au.id=a.user_id
++  where public.syndic_manages_residence(r.id)),'[]'::jsonb),
++ 'requests',coalesce((select jsonb_agg(jsonb_build_object('id',q.id,'unit',u.label,'residence',r.name,'email',au.email,
++   'name',trim(coalesce(au.raw_user_meta_data->>'first_name','')||' '||coalesce(au.raw_user_meta_data->>'last_name','')),
++   'phone',coalesce(au.raw_user_meta_data->>'phone',''),'created_at',q.created_at) order by q.created_at)
++  from public.syndic_join_requests q join public.syndic_units u on u.id=q.unit_id join public.syndic_residences r on r.id=u.residence_id join auth.users au on au.id=q.user_id
++  where q.status='pending' and public.syndic_manages_residence(r.id)),'[]'::jsonb));
++$$;
++
++-- My pending join requests (resident side).
++create function public.syndic_my_join_requests() returns jsonb language sql stable security definer set search_path='' as $$
++ select coalesce(jsonb_agg(jsonb_build_object('id',q.id,'status',q.status,'unit',u.label,'residence',r.name,'created_at',q.created_at) order by q.created_at desc),'[]'::jsonb)
++ from public.syndic_join_requests q join public.syndic_units u on u.id=q.unit_id join public.syndic_residences r on r.id=u.residence_id where q.user_id=auth.uid();
++$$;
++
++revoke all on function public.syndic_request_syndic_account(text,text,text,text),public.syndic_admin_decide_account(uuid,boolean),public.syndic_my_status(),
++ public.syndic_admin_set_billing(text,text,text,text),public.syndic_submit_subscription_payment(uuid,text,integer,bigint,text,text),public.syndic_admin_review_payment(uuid,boolean,text),
++ public.syndic_request_join(uuid),public.syndic_decide_join_request(uuid,boolean),public.syndic_set_resident_blocked(uuid,uuid,boolean),public.syndic_remove_resident(uuid,uuid),
++ public.syndic_manager_people(),public.syndic_my_join_requests() from public,anon;
++grant execute on function public.syndic_request_syndic_account(text,text,text,text),public.syndic_admin_decide_account(uuid,boolean),public.syndic_my_status(),
++ public.syndic_admin_set_billing(text,text,text,text),public.syndic_submit_subscription_payment(uuid,text,integer,bigint,text,text),public.syndic_admin_review_payment(uuid,boolean,text),
++ public.syndic_request_join(uuid),public.syndic_decide_join_request(uuid,boolean),public.syndic_set_resident_blocked(uuid,uuid,boolean),public.syndic_remove_resident(uuid,uuid),
++ public.syndic_manager_people(),public.syndic_my_join_requests() to authenticated;
++revoke all on function public.syndic_link_to_request(uuid,uuid,uuid),public.syndic_request_join_link(uuid,uuid,uuid) from public,anon,authenticated;
++grant execute on function public.syndic_request_join_link(uuid,uuid,uuid) to service_role;
++
++-- Private bucket for transfer screenshots (uploads and signed URLs go through the server only).
++do $$ begin
++ if exists(select 1 from pg_namespace where nspname='storage') then
++  insert into storage.buckets(id,name,public,file_size_limit,allowed_mime_types)
++  values('syndic-payment-proofs','syndic-payment-proofs',false,5242880,array['image/png','image/jpeg','image/webp','application/pdf'])
++  on conflict(id) do nothing;
++ end if;
++end $$;
++commit;
+diff --git a/tests/signup-billing.test.ts b/tests/signup-billing.test.ts
+new file mode 100644
+index 0000000..c5d1685
+--- /dev/null
++++ b/tests/signup-billing.test.ts
+@@ -0,0 +1,127 @@
++import { PGlite } from "@electric-sql/pglite";
++import { readFileSync } from "node:fs";
++import { beforeAll, afterAll, it, expect } from "vitest";
++let db: PGlite;
++const syndic = "11111111-1111-4111-8111-111111111111",
++  resident = "22222222-2222-4222-8222-222222222222",
++  admin = "33333333-3333-4333-8333-333333333333",
++  other = "44444444-4444-4444-8444-444444444444";
++let org: string, unit: string;
++async function as(id: string) {
++  await db.exec(
++    `reset role; set role authenticated; select set_config('request.jwt.claim.sub','${id}',false)`,
++  );
++}
++async function one<T>(sql: string, args: unknown[] = []) {
++  return (await db.query<{ r: T }>(sql, args)).rows[0]?.r;
++}
++beforeAll(async () => {
++  db = new PGlite();
++  await db.exec(
++    `create role anon; create role authenticated; create role service_role; create schema auth; create table auth.users(id uuid primary key,email text,email_confirmed_at timestamptz,raw_user_meta_data jsonb default '{}'); create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$; grant usage on schema auth,public to authenticated,anon,service_role; grant execute on function auth.uid() to authenticated,anon,service_role; insert into auth.users(id,email,email_confirmed_at,raw_user_meta_data) values('${syndic}','syndic@example.com',now(),'{}'),('${resident}','resident@example.com',now(),'{"first_name":"Sara","last_name":"Alami","phone":"0600000000"}'),('${admin}','admin@example.com',now(),'{}'),('${other}','other@example.com',now(),'{}');`,
++  );
++  for (const f of [
++    "202611010001_syndic_foundations.sql",
++    "202611010002_admin_residents.sql",
++    "202611010003_operations.sql",
++    "202611020001_private_registration.sql",
++    "202611080001_support_and_accounts.sql",
++    "202611080002_join_links.sql",
++    "202611110001_signup_billing.sql",
++  ])
++    await db.exec(readFileSync("supabase/migrations/" + f, "utf8"));
++  await db.query("insert into public.syndic_platform_admins values($1)", [admin]);
++}, 60000);
++afterAll(async () => {
++  await db.close();
++});
++it("a syndic sign-up waits for admin approval and starts a one-month trial", async () => {
++  await as(syndic);
++  await db.query("select public.syndic_request_syndic_account('Atlas Gestion','standard','Karim B','0611223344')");
++  expect((await one<{ request: string; member: boolean }>("select public.syndic_my_status() r")).request).toBe("pending");
++  await expect(db.query("select public.syndic_request_syndic_account('Atlas','standard','Karim','0611223344')")).rejects.toThrow();
++  await expect(db.query("select public.syndic_admin_decide_account($1,true)", [syndic])).rejects.toThrow();
++  await as(admin);
++  expect((await db.query("select * from public.syndic_account_requests")).rows).toHaveLength(1);
++  org = (await one<string>("select public.syndic_admin_decide_account($1,true) r", [syndic]))!;
++  await as(syndic);
++  const status = await one<{ member: boolean; request: string }>("select public.syndic_my_status() r");
++  expect(status.member).toBe(true);
++  const sub = (await db.query<{ plan: string; status: string; ends_at: Date }>("select plan,status,ends_at from public.syndic_subscription_records")).rows[0];
++  expect(sub.plan).toBe("essai");
++  expect(sub.status).toBe("trialing");
++  const days = (sub.ends_at.getTime() - Date.now()) / 86400000;
++  expect(days).toBeGreaterThan(27);
++  expect(days).toBeLessThan(32);
++});
++it("bank transfer payments are validated or refused by the admin and extend the subscription", async () => {
++  await as(syndic);
++  await expect(db.query("select public.syndic_submit_subscription_payment($1,'standard',3,1000,'VIR1',$2)", [org, org + "/a.png"])).rejects.toThrow();
++  await expect(db.query("select public.syndic_submit_subscription_payment($1,'standard',3,9000,'VIR1','other/a.png')", [org])).rejects.toThrow();
++  const p1 = await one<string>("select public.syndic_submit_subscription_payment($1,'standard',3,9000,'VIR1',$2) r", [org, org + "/a.png"]);
++  const p2 = await one<string>("select public.syndic_submit_subscription_payment($1,'entreprise',1,50000,'VIR2',$2) r", [org, org + "/b.png"]);
++  await as(other);
++  expect((await db.query("select * from public.syndic_subscription_payments")).rows).toHaveLength(0);
++  await expect(db.query("select public.syndic_submit_subscription_payment($1,'standard',1,3000,'X',$2)", [org, org + "/x.png"])).rejects.toThrow();
++  await as(syndic);
++  await expect(db.query("select public.syndic_admin_review_payment($1,true,'')", [p1])).rejects.toThrow();
++  await as(admin);
++  expect((await db.query("select * from public.syndic_inbox where link='/admin'")).rows.length).toBeGreaterThanOrEqual(2);
++  const before = (await db.query<{ ends_at: Date }>("select ends_at from public.syndic_subscription_records")).rows[0].ends_at;
++  await db.query("select public.syndic_admin_review_payment($1,true,'')", [p1]);
++  await expect(db.query("select public.syndic_admin_review_payment($1,true,'')", [p1])).rejects.toThrow();
++  const after = (await db.query<{ ends_at: Date; plan: string; status: string }>("select ends_at,plan,status from public.syndic_subscription_records")).rows[0];
++  expect(after.plan).toBe("standard");
++  expect(after.status).toBe("active");
++  const addedDays = (after.ends_at.getTime() - before.getTime()) / 86400000;
++  expect(addedDays).toBeGreaterThan(88);
++  expect(addedDays).toBeLessThan(93);
++  await db.query("select public.syndic_admin_review_payment($1,false,'Montant incorrect')", [p2]);
++  expect((await db.query<{ plan: string }>("select plan from public.syndic_subscription_records")).rows[0].plan).toBe("standard");
++  await db.query("select public.syndic_admin_set_billing('Alia Digital','Banque','011780000012345678901234','Indiquez le nom du syndic')");
++  await as(syndic);
++  expect((await db.query<{ rib: string }>("select rib from public.syndic_billing_settings")).rows[0].rib).toBe("011780000012345678901234");
++  await expect(db.query("select public.syndic_admin_set_billing('x','y','z','')")).rejects.toThrow();
++});
++it("join links create requests the syndic approves, then can block and remove residents", async () => {
++  await as(syndic);
++  const residence = await one<string>("insert into public.syndic_residences(organization_id,name,address,city) values($1,'Atlas','Rue Atlas','Rabat') returning id r", [org]);
++  unit = (await one<string>("insert into public.syndic_units(residence_id,label,kind,share) values($1,'A1','apartment',1) returning id r", [residence]))!;
++  const link = await one<string>("select public.syndic_create_join_link($1) r", [unit]);
++  await as(resident);
++  const req = await one<string>("select public.syndic_request_join($1) r", [link]);
++  await expect(db.query("select public.syndic_request_join($1)", [link])).rejects.toThrow();
++  expect(await one<boolean>("select public.syndic_can_access_unit($1) r", [unit])).toBe(false);
++  await expect(db.query("select public.syndic_decide_join_request($1,true)", [req])).rejects.toThrow();
++  await as(syndic);
++  const people = await one<{ requests: { email: string; name: string }[] }>("select public.syndic_manager_people() r");
++  expect(people.requests[0].email).toBe("resident@example.com");
++  expect(people.requests[0].name).toBe("Sara Alami");
++  await db.query("select public.syndic_decide_join_request($1,true)", [req]);
++  await as(resident);
++  expect(await one<boolean>("select public.syndic_can_access_unit($1) r", [unit])).toBe(true);
++  await as(other);
++  await expect(db.query("select public.syndic_set_resident_blocked($1,$2,true)", [unit, resident])).rejects.toThrow();
++  await as(syndic);
++  await db.query("select public.syndic_set_resident_blocked($1,$2,true)", [unit, resident]);
++  await as(resident);
++  expect(await one<boolean>("select public.syndic_can_access_unit($1) r", [unit])).toBe(false);
++  await as(syndic);
++  await db.query("select public.syndic_set_resident_blocked($1,$2,false)", [unit, resident]);
++  await as(resident);
++  expect(await one<boolean>("select public.syndic_can_access_unit($1) r", [unit])).toBe(true);
++  await as(syndic);
++  await db.query("select public.syndic_remove_resident($1,$2)", [unit, resident]);
++  await as(resident);
++  expect(await one<boolean>("select public.syndic_can_access_unit($1) r", [unit])).toBe(false);
++  // Service-role path for brand-new accounts.
++  await as(syndic);
++  const link2 = await one<string>("select public.syndic_create_join_link($1) r", [unit]);
++  await db.exec("reset role; set role service_role");
++  const attempt = "55555555-5555-4555-8555-555555555555";
++  expect(await one<boolean>("select public.syndic_reserve_join_link($1,$2) r", [link2, attempt])).toBe(true);
++  await db.query("select public.syndic_request_join_link($1,$2,$3)", [link2, attempt, other]);
++  await as(other);
++  expect((await one<{ status: string }[]>("select public.syndic_my_join_requests() r"))[0].status).toBe("pending");
++  await expect(db.query("select public.syndic_request_join_link($1,$2,$3)", [link2, attempt, other])).rejects.toThrow();
++});
+-- 
+2.43.0
+

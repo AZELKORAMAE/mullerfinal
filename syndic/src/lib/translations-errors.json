@@ -1,0 +1,478 @@
+{
+  "/resident": {
+    "ar": "/resident",
+    "en": "/resident"
+  },
+  "Renseignez votre e-mail et votre mot de passe.": {
+    "ar": "أدخل بريدك الإلكتروني وكلمة المرور.",
+    "en": "Enter your email and password."
+  },
+  "Connexion impossible. Vérifiez vos identifiants et la confirmation de votre adresse.": {
+    "ar": "تعذر تسجيل الدخول. تحقق من بيانات الدخول وتأكيد بريدك.",
+    "en": "Unable to sign in. Check your credentials and email confirmation."
+  },
+  "Indiquez votre e-mail.": {
+    "ar": "أدخل بريدك الإلكتروني.",
+    "en": "Enter your email."
+  },
+  "Si ce compte existe, un lien de réinitialisation sera envoyé.": {
+    "ar": "إذا كان الحساب موجوداً فسيُرسل رابط لإعادة تعيين كلمة المرور.",
+    "en": "If the account exists, a password reset link will be sent."
+  },
+  "Choisissez entre 12 et 128 caractères.": {
+    "ar": "اختر بين 12 و128 حرفاً.",
+    "en": "Choose between 12 and 128 characters."
+  },
+  "Impossible de modifier le mot de passe. Recommencez la réinitialisation.": {
+    "ar": "تعذر تغيير كلمة المرور. أعد عملية التعيين.",
+    "en": "Unable to change the password. Restart the reset process."
+  },
+  "Mot de passe mis à jour.": {
+    "ar": "تم تحديث كلمة المرور.",
+    "en": "Password updated."
+  },
+  "Le nom doit contenir entre 2 et 120 caractères.": {
+    "ar": "يجب أن يتكون الاسم من حرفين إلى 120 حرفاً.",
+    "en": "The name must contain between 2 and 120 characters."
+  },
+  "Création impossible. Vérifiez que la migration SyndiConnect est installée.": {
+    "ar": "تعذر الإنشاء. تحقق من إعداد قاعدة البيانات.",
+    "en": "Unable to create. Check the database setup."
+  },
+  "Organisation créée. Ajoutez votre première résidence.": {
+    "ar": "تم إنشاء المؤسسة. أضف إقامتك الأولى.",
+    "en": "Organisation created. Add your first residence."
+  },
+  "Vérifiez le nom, la ville, l’adresse et l’organisation.": {
+    "ar": "تحقق من الاسم والمدينة والعنوان والمؤسسة.",
+    "en": "Check the name, city, address and organisation."
+  },
+  "Création refusée. Vérifiez vos droits sur cette organisation.": {
+    "ar": "رُفض الإنشاء. تحقق من صلاحياتك في هذه المؤسسة.",
+    "en": "Creation denied. Check your permissions for this organisation."
+  },
+  "Résidence créée.": {
+    "ar": "تم إنشاء الإقامة.",
+    "en": "Residence created."
+  },
+  "Vérifiez la résidence, le libellé et la quote-part positive.": {
+    "ar": "تحقق من الإقامة واسم الوحدة والحصة الموجبة.",
+    "en": "Check the residence, unit label and positive share."
+  },
+  "Création refusée : droits insuffisants ou libellé déjà utilisé dans cette résidence.": {
+    "ar": "رُفض الإنشاء: صلاحيات غير كافية أو اسم مستخدم بالفعل في هذه الإقامة.",
+    "en": "Creation denied: insufficient permissions or a duplicate unit label."
+  },
+  "Compte syndic créé. Transmettez ses identifiants par un canal privé. Aucun e-mail envoyé.": {
+    "ar": "تم إنشاء حساب السنديك. أرسل بياناته عبر قناة خاصة. لم يُرسل بريد.",
+    "en": "Manager account created. Share credentials privately. No email was sent."
+  },
+  "Création indisponible. Vérifiez la configuration serveur ou si cette adresse possède déjà un compte.": {
+    "ar": "الإنشاء غير متاح. تحقق من إعداد الخادم أو وجود حساب بهذا البريد.",
+    "en": "Creation unavailable. Check server configuration or whether this email already has an account."
+  },
+  "Compte habitant créé et associé au lot. Aucun e-mail envoyé.": {
+    "ar": "تم إنشاء حساب الساكن وربطه بالوحدة. لم يُرسل بريد.",
+    "en": "Resident account created and linked to the unit. No email was sent."
+  },
+  "Vérifiez les informations de la résidence.": {
+    "ar": "تحقق من معلومات الإقامة.",
+    "en": "Check the residence details."
+  },
+  "Création refusée. Contactez votre administrateur.": {
+    "ar": "رُفض الإنشاء. اتصل بالمسؤول.",
+    "en": "Creation denied. Contact your administrator."
+  },
+  "Résidence créée. Ajoutez maintenant un appartement.": {
+    "ar": "تم إنشاء الإقامة. أضف شقة الآن.",
+    "en": "Residence created. Now add an apartment."
+  },
+  "Vérifiez les informations de l’appartement.": {
+    "ar": "تحقق من معلومات الشقة.",
+    "en": "Check the apartment details."
+  },
+  "Création refusée ou appartement déjà existant.": {
+    "ar": "رُفض الإنشاء أو الشقة موجودة بالفعل.",
+    "en": "Creation denied or apartment already exists."
+  },
+  "Appartement ajouté. Vous pouvez maintenant inviter un habitant.": {
+    "ar": "تمت إضافة الشقة. يمكنك الآن دعوة ساكن.",
+    "en": "Apartment added. You can now invite a resident."
+  },
+  "Choisissez un appartement.": {
+    "ar": "اختر شقة.",
+    "en": "Choose an apartment."
+  },
+  "Création du lien refusée.": {
+    "ar": "رُفض إنشاء الرابط.",
+    "en": "Link creation denied."
+  },
+  "Lien créé pour 7 jours.": {
+    "ar": "تم إنشاء الرابط لمدة 7 أيام.",
+    "en": "Link created for 7 days."
+  },
+  "Lien invalide.": {
+    "ar": "رابط غير صالح.",
+    "en": "Invalid link."
+  },
+  "Révocation refusée.": {
+    "ar": "رُفض الإلغاء.",
+    "en": "Revocation denied."
+  },
+  "Lien et accès associé révoqués.": {
+    "ar": "تم إلغاء الرابط والوصول المرتبط به.",
+    "en": "Link and associated access revoked."
+  },
+  "Vérifiez le lot et l’adresse e-mail.": {
+    "ar": "تحقق من الوحدة والبريد الإلكتروني.",
+    "en": "Check the unit and email address."
+  },
+  "Invitation refusée. Vérifiez vos droits sur ce lot.": {
+    "ar": "رُفضت الدعوة. تحقق من صلاحياتك على هذه الوحدة.",
+    "en": "Invitation denied. Check your permissions for this unit."
+  },
+  "Invitation créée pour 7 jours. Transmettez au résident l’adresse de l’espace résident ; aucun e-mail automatique n’a été envoyé.": {
+    "ar": "تم إنشاء دعوة لمدة 7 أيام. شارك رابط مساحة الساكن؛ لم يُرسل بريد تلقائي.",
+    "en": "Invitation created for 7 days. Share the resident-space address; no automatic email was sent."
+  },
+  "Invitation invalide.": {
+    "ar": "دعوة غير صالحة.",
+    "en": "Invalid invitation."
+  },
+  "Invitation et accès associé révoqués.": {
+    "ar": "تم إلغاء الدعوة والوصول المرتبط بها.",
+    "en": "Invitation and associated access revoked."
+  },
+  "Vérifiez la résidence, le titre et le texte.": {
+    "ar": "تحقق من الإقامة والعنوان والنص.",
+    "en": "Check the residence, title and text."
+  },
+  "Publication refusée. Vérifiez vos droits.": {
+    "ar": "رُفض النشر. تحقق من صلاحياتك.",
+    "en": "Publication denied. Check your permissions."
+  },
+  "Annonce publiée aux résidents de cette résidence.": {
+    "ar": "نُشر الإعلان لسكان هذه الإقامة.",
+    "en": "Announcement published to residents."
+  },
+  "Enregistrement impossible.": {
+    "ar": "تعذر الحفظ.",
+    "en": "Unable to save."
+  },
+  "Profil enregistré.": {
+    "ar": "تم حفظ الملف الشخصي.",
+    "en": "Profile saved."
+  },
+  "Action refusée. Vérifiez vos droits et renseignez un compte rendu pour clôturer.": {
+    "ar": "رُفض الإجراء. تحقق من صلاحياتك وأدخل تقريراً للإغلاق.",
+    "en": "Action denied. Check permissions and add a report to close the incident."
+  },
+  "Incident enregistré.": {
+    "ar": "تم تسجيل المشكل.",
+    "en": "Incident saved."
+  },
+  "Action refusée. Vérifiez les champs, vos droits et les montants.": {
+    "ar": "رُفض الإجراء. تحقق من الحقول والصلاحيات والمبالغ.",
+    "en": "Action denied. Check the fields, permissions and amounts."
+  },
+  "Enregistrement effectué.": {
+    "ar": "تم الحفظ.",
+    "en": "Saved."
+  },
+  "Votre compte existe, mais son association doit être terminée par votre syndic. Contactez-le.": {
+    "ar": "حسابك موجود، لكن يجب أن يكمل السنديك ربطه. تواصل معه.",
+    "en": "Your account exists, but your manager must complete its association. Contact them."
+  },
+  "Création impossible. Cette adresse peut déjà posséder un compte. Contactez votre syndic.": {
+    "ar": "تعذر الإنشاء. قد يكون لهذا البريد حساب بالفعل. تواصل مع السنديك.",
+    "en": "Unable to create the account. This email may already have an account. Contact your manager."
+  },
+  "Vérifiez les champs et le motif.": {
+    "ar": "تحقق من الحقول والسبب.",
+    "en": "Check the fields and reason."
+  },
+  "Modification refusée. Vérifiez la date de fin.": {
+    "ar": "رُفض التعديل. تحقق من تاريخ النهاية.",
+    "en": "Change denied. Check the end date."
+  },
+  "Abonnement mis à jour et historisé.": {
+    "ar": "تم تحديث الاشتراك وحفظه في السجل.",
+    "en": "Subscription updated and logged."
+  },
+  "Vérifiez les champs.": {
+    "ar": "تحقق من الحقول.",
+    "en": "Check the fields."
+  },
+  "Invitation expirée ou adresse e-mail non vérifiée.": {
+    "ar": "انتهت صلاحية الدعوة أو لم يتم تأكيد البريد.",
+    "en": "Invitation expired or email not verified."
+  },
+  "Invitation acceptée.": {
+    "ar": "تم قبول الدعوة.",
+    "en": "Invitation accepted."
+  },
+  "Vérifiez vos informations.": {
+    "ar": "تحقق من معلوماتك.",
+    "en": "Check your details."
+  },
+  "Invitation indisponible ou en cours d’utilisation.": {
+    "ar": "الدعوة غير متاحة أو قيد الاستخدام.",
+    "en": "Invitation unavailable or currently in use."
+  },
+  "Votre compte est créé. Connectez-vous.": {
+    "ar": "تم إنشاء حسابك. سجّل الدخول.",
+    "en": "Your account has been created. Sign in."
+  },
+  "Pseudo invalide.": {
+    "ar": "اسم مستعار غير صالح.",
+    "en": "Invalid nickname."
+  },
+  "Inscription publique fermée.": {
+    "ar": "التسجيل العام مغلق.",
+    "en": "Public registration is closed."
+  },
+  "Les comptes sont créés par votre administrateur ou votre syndic.": {
+    "ar": "يُنشئ المسؤول أو السنديك الحسابات.",
+    "en": "Accounts are created by your administrator or manager."
+  },
+  "Lien expiré ou invalide.": {
+    "ar": "الرابط منتهي الصلاحية أو غير صالح.",
+    "en": "Link expired or invalid."
+  },
+  "Référence de règlement vérifié ou décision commerciale": {
+    "ar": "مرجع دفع متحقق منه أو قرار تجاري",
+    "en": "Verified payment reference or commercial decision"
+  },
+  "Résidence Atlas": {
+    "ar": "إقامة أطلس",
+    "en": "Atlas Residence"
+  },
+  "Cabinet ou syndic bénévole": {
+    "ar": "مكتب أو سنديك متطوع",
+    "en": "Agency or volunteer manager"
+  },
+  "Navigation principale": {
+    "ar": "القائمة الرئيسية",
+    "en": "Main navigation"
+  },
+  "Lot créé.": {
+    "ar": "تم إنشاء الوحدة.",
+    "en": "Unit created."
+  },
+  "Nouvelle cotisation :": {
+    "ar": "مساهمة جديدة:",
+    "en": "New contribution:"
+  },
+  "Nouvelle réunion :": {
+    "ar": "اجتماع جديد:",
+    "en": "New meeting:"
+  },
+  "Réunion dans les prochaines 24 heures :": {
+    "ar": "اجتماع خلال 24 ساعة القادمة:",
+    "en": "Meeting in the next 24 hours:"
+  },
+  "Incident déclaré :": {
+    "ar": "بلاغ جديد:",
+    "en": "New incident:"
+  },
+  "Suivi de votre incident :": {
+    "ar": "متابعة بلاغك:",
+    "en": "Incident update:"
+  },
+  "Règlement enregistré par votre syndic": {
+    "ar": "سجّل السنديك دفعتك",
+    "en": "Payment recorded by your manager"
+  },
+  "Rappel : une cotisation reste à régler": {
+    "ar": "تذكير: مساهمة لم تُسدّد بعد",
+    "en": "Reminder: a contribution remains unpaid"
+  },
+  "Nouveau message concernant votre lot": {
+    "ar": "رسالة جديدة بخصوص وحدتك",
+    "en": "New message about your unit"
+  },
+  "Mon profil": {
+    "ar": "ملفي الشخصي",
+    "en": "My profile"
+  },
+  "Envoyer le code": {
+    "ar": "إرسال الرمز",
+    "en": "Send code"
+  },
+  "J’ai déjà un code": {
+    "ar": "لدي رمز بالفعل",
+    "en": "I already have a code"
+  },
+  "Réinitialiser le mot de passe": {
+    "ar": "إعادة تعيين كلمة المرور",
+    "en": "Reset password"
+  },
+  "Code à 6 chiffres": {
+    "ar": "رمز من 6 أرقام",
+    "en": "6-digit code"
+  },
+  "Confirmer le mot de passe": {
+    "ar": "تأكيد كلمة المرور",
+    "en": "Confirm password"
+  },
+  "Demander un nouveau code": {
+    "ar": "طلب رمز جديد",
+    "en": "Request a new code"
+  },
+  "Si ce compte existe, un code de réinitialisation sera envoyé.": {
+    "ar": "إذا كان الحساب موجودًا، فسيتم إرسال رمز لإعادة التعيين.",
+    "en": "If this account exists, a reset code will be sent."
+  },
+  "Indiquez votre e-mail et le code à 6 chiffres.": {
+    "ar": "أدخل بريدك الإلكتروني والرمز المكون من 6 أرقام.",
+    "en": "Enter your email and the 6-digit code."
+  },
+  "Les mots de passe ne correspondent pas.": {
+    "ar": "كلمتا المرور غير متطابقتين.",
+    "en": "Passwords do not match."
+  },
+  "Code invalide ou expiré. Demandez un nouveau code.": {
+    "ar": "الرمز غير صالح أو منتهي الصلاحية. اطلب رمزًا جديدًا.",
+    "en": "Invalid or expired code. Request a new code."
+  },
+  "Demande envoyée. Votre syndic doit l’approuver avant l’ouverture de votre accès.": {
+    "ar": "تم إرسال الطلب. يجب أن يوافق السانديك قبل فتح وصولك.",
+    "en": "Request sent. Your syndic must approve it before your access opens."
+  },
+  "Bienvenue ! Votre compte est créé.": {
+    "ar": "مرحباً! تم إنشاء حسابك.",
+    "en": "Welcome! Your account has been created."
+  },
+  "Vérifiez vos informations et le nom de votre syndic.": {
+    "ar": "تحقق من معلوماتك واسم السانديك.",
+    "en": "Check your details and your syndic name."
+  },
+  "Création impossible. Cette adresse possède peut-être déjà un compte : connectez-vous.": {
+    "ar": "تعذر الإنشاء. قد يكون لهذا البريد حساب بالفعل: سجل الدخول.",
+    "en": "Unable to create. This address may already have an account: sign in."
+  },
+  "Votre compte est créé, mais la demande syndic n’a pas pu être enregistrée. Réessayez ci-dessous.": {
+    "ar": "تم إنشاء حسابك، لكن تعذر تسجيل طلب السانديك. أعد المحاولة أدناه.",
+    "en": "Your account is created, but the syndic request could not be saved. Try again below."
+  },
+  "Demande impossible : une demande est déjà en cours ou votre compte est déjà syndic.": {
+    "ar": "تعذر الطلب: يوجد طلب قيد المعالجة أو حسابك سانديك بالفعل.",
+    "en": "Request impossible: a request is already pending or your account is already a syndic."
+  },
+  "Demande envoyée. Vous serez notifié après validation.": {
+    "ar": "تم إرسال الطلب. سيتم إشعارك بعد الموافقة.",
+    "en": "Request sent. You will be notified after approval."
+  },
+  "Demande impossible : lien déjà utilisé, expiré, ou vous avez déjà accès à ce logement.": {
+    "ar": "تعذر الطلب: الرابط مستعمل أو منتهي، أو لديك وصول لهذا السكن.",
+    "en": "Request impossible: link already used, expired, or you already have access to this home."
+  },
+  "Votre compte est créé, mais la demande n’a pas pu être envoyée. Connectez-vous puis rouvrez le lien.": {
+    "ar": "تم إنشاء حسابك، لكن تعذر إرسال الطلب. سجل الدخول ثم افتح الرابط مجدداً.",
+    "en": "Your account is created, but the request could not be sent. Sign in and reopen the link."
+  },
+  "Création impossible. Cette adresse possède peut-être déjà un compte : connectez-vous pour rejoindre la résidence.": {
+    "ar": "تعذر الإنشاء. قد يكون لهذا البريد حساب: سجل الدخول للانضمام إلى الإقامة.",
+    "en": "Unable to create. This address may already have an account: sign in to join the residence."
+  },
+  "Paiement envoyé. Votre abonnement sera prolongé dès la validation du virement.": {
+    "ar": "تم إرسال الدفعة. سيتم تمديد اشتراكك فور تأكيد التحويل.",
+    "en": "Payment sent. Your subscription will be extended once the transfer is validated."
+  },
+  "Envoi impossible. Vérifiez vos informations (3 paiements en attente maximum) ou réessayez.": {
+    "ar": "تعذر الإرسال. تحقق من معلوماتك (3 دفعات معلقة كحد أقصى) أو أعد المحاولة.",
+    "en": "Unable to send. Check your details (3 pending payments maximum) or try again."
+  },
+  "Ajoutez la capture d’écran de votre virement.": {
+    "ar": "أضف صورة شاشة التحويل.",
+    "en": "Add the screenshot of your transfer."
+  },
+  "Format accepté : image PNG, JPG, WEBP ou PDF de 5 Mo maximum.": {
+    "ar": "الصيغ المقبولة: PNG أو JPG أو WEBP أو PDF بحد أقصى 5 ميغابايت.",
+    "en": "Accepted: PNG, JPG, WEBP or PDF up to 5 MB."
+  },
+  "Vérifiez le plan, la durée et le montant.": {
+    "ar": "تحقق من الباقة والمدة والمبلغ.",
+    "en": "Check the plan, duration and amount."
+  },
+  "Indiquez le montant viré.": {
+    "ar": "أدخل المبلغ المحول.",
+    "en": "Enter the amount transferred."
+  },
+  "Compte syndic approuvé : essai gratuit d’un mois activé.": {
+    "ar": "تمت الموافقة على حساب السانديك: تم تفعيل تجربة مجانية لمدة شهر.",
+    "en": "Syndic account approved: one-month free trial activated."
+  },
+  "Demande de compte syndic refusée.": {
+    "ar": "تم رفض طلب حساب السانديك.",
+    "en": "Syndic account request rejected."
+  },
+  "Paiement validé : abonnement prolongé.": {
+    "ar": "تم تأكيد الدفعة: تم تمديد الاشتراك.",
+    "en": "Payment approved: subscription extended."
+  },
+  "Paiement refusé.": {
+    "ar": "تم رفض الدفعة.",
+    "en": "Payment rejected."
+  },
+  "Coordonnées bancaires enregistrées.": {
+    "ar": "تم حفظ المعلومات البنكية.",
+    "en": "Bank details saved."
+  },
+  "Demande approuvée : l’habitant a maintenant accès à son logement.": {
+    "ar": "تمت الموافقة: لدى الساكن الآن وصول إلى سكنه.",
+    "en": "Request approved: the resident now has access to their home."
+  },
+  "Demande refusée.": {
+    "ar": "تم رفض الطلب.",
+    "en": "Request rejected."
+  },
+  "Utilisateur supprimé de votre espace.": {
+    "ar": "تم حذف المستخدم من فضائك.",
+    "en": "User removed from your space."
+  },
+  "Utilisateur bloqué.": {
+    "ar": "تم حظر المستخدم.",
+    "en": "User blocked."
+  },
+  "Utilisateur débloqué.": {
+    "ar": "تم إلغاء حظر المستخدم.",
+    "en": "User unblocked."
+  },
+  "Action refusée. Vérifiez vos droits.": {
+    "ar": "تم رفض الإجراء. تحقق من صلاحياتك.",
+    "en": "Action refused. Check your rights."
+  },
+  "Nouveau compte syndic à approuver :": {
+    "ar": "حساب سانديك جديد للموافقة:",
+    "en": "New syndic account to approve:"
+  },
+  "Nouveau virement à vérifier :": {
+    "ar": "تحويل جديد للتحقق:",
+    "en": "New transfer to verify:"
+  },
+  "Paiement validé : abonnement prolongé": {
+    "ar": "تم تأكيد الدفعة: تم تمديد الاشتراك",
+    "en": "Payment approved: subscription extended"
+  },
+  "Paiement refusé : contactez le support": {
+    "ar": "تم رفض الدفعة: تواصل مع الدعم",
+    "en": "Payment rejected: contact support"
+  },
+  "Nouvelle demande d'adhésion à valider": {
+    "ar": "طلب انضمام جديد للموافقة",
+    "en": "New join request to approve"
+  },
+  "Votre demande d'adhésion est acceptée": {
+    "ar": "تم قبول طلب انضمامك",
+    "en": "Your join request was accepted"
+  },
+  "Votre demande d'adhésion a été refusée": {
+    "ar": "تم رفض طلب انضمامك",
+    "en": "Your join request was rejected"
+  },
+  "Votre compte syndic est approuvé : essai gratuit d'un mois": {
+    "ar": "تمت الموافقة على حساب السانديك: تجربة مجانية لمدة شهر",
+    "en": "Your syndic account is approved: one-month free trial"
+  }
+}

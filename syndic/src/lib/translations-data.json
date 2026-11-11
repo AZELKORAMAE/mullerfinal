@@ -1,0 +1,747 @@
+{
+  "Accueil": { "ar": "الرئيسية", "en": "Home" },
+  "Dépenses": { "ar": "المصاريف", "en": "Expenses" },
+  "Messages": { "ar": "الرسائل", "en": "Messages" },
+  "Activités": { "ar": "الأنشطة", "en": "Activities" },
+  "Résidence": { "ar": "الإقامة", "en": "Residence" },
+  "Résidences": { "ar": "الإقامات", "en": "Residences" },
+  "Habitants": { "ar": "السكان", "en": "Residents" },
+  "Appartement": { "ar": "الشقة", "en": "Apartment" },
+  "Appartements": { "ar": "الشقق", "en": "Apartments" },
+  "Lots": { "ar": "الوحدات", "en": "Units" },
+  "Lot": { "ar": "الوحدة", "en": "Unit" },
+  "Mon profil": { "ar": "ملفي الشخصي", "en": "My profile" },
+  "Mon espace": { "ar": "مساحتي", "en": "My space" },
+  "Se connecter": { "ar": "تسجيل الدخول", "en": "Sign in" },
+  "Déconnexion": { "ar": "تسجيل الخروج", "en": "Sign out" },
+  "Adresse e-mail": { "ar": "البريد الإلكتروني", "en": "Email address" },
+  "E-mail": { "ar": "البريد الإلكتروني", "en": "Email" },
+  "E-mail de connexion": { "ar": "بريد تسجيل الدخول", "en": "Login email" },
+  "Mot de passe": { "ar": "كلمة المرور", "en": "Password" },
+  "Mot de passe initial": {
+    "ar": "كلمة المرور الأولية",
+    "en": "Initial password"
+  },
+  "Nouveau mot de passe": { "ar": "كلمة مرور جديدة", "en": "New password" },
+  "Prénom": { "ar": "الاسم الشخصي", "en": "First name" },
+  "Nom": { "ar": "الاسم العائلي", "en": "Name" },
+  "Pseudo": { "ar": "الاسم المستعار", "en": "Nickname" },
+  "Téléphone": { "ar": "رقم الهاتف", "en": "Phone number" },
+  "Enregistrer": { "ar": "حفظ", "en": "Save" },
+  "En cours…": { "ar": "جارٍ التنفيذ…", "en": "Working…" },
+  "En cours": { "ar": "قيد المعالجة", "en": "In progress" },
+  "En attente": { "ar": "في الانتظار", "en": "Pending" },
+  "Notifications": { "ar": "الإشعارات", "en": "Notifications" },
+  "Ma résidence": { "ar": "إقامتي", "en": "My residence" },
+  "Les comptes, simplement.": {
+    "ar": "حسابات واضحة، بكل بساطة.",
+    "en": "Shared costs, made simple."
+  },
+  "Dépenses partagées": { "ar": "المصاريف المشتركة", "en": "Shared expenses" },
+  "Conversations": { "ar": "المحادثات", "en": "Conversations" },
+  "La vie de la résidence": { "ar": "حياة الإقامة", "en": "Residence life" },
+  "+ Ajouter": { "ar": "+ إضافة", "en": "+ Add" },
+  "Appelé": { "ar": "المستحق", "en": "Due" },
+  "Réglé": { "ar": "المدفوع", "en": "Paid" },
+  "À régler": { "ar": "المتبقي", "en": "To pay" },
+  "Qui doit quoi ?": {
+    "ar": "ما المبلغ المستحق على كل واحد؟",
+    "en": "Who owes what?"
+  },
+  "Aucune cotisation pour le moment.": {
+    "ar": "لا توجد مساهمات حالياً.",
+    "en": "No contributions yet."
+  },
+  "à régler": { "ar": "مستحق للدفع", "en": "to pay" },
+  "Montant :": { "ar": "المبلغ:", "en": "Amount:" },
+  "· Échéance :": { "ar": "· آخر أجل:", "en": "· Due date:" },
+  "· Référence": { "ar": "· المرجع", "en": "· Reference" },
+  "Montant reçu en MAD": {
+    "ar": "المبلغ المستلم بالدرهم",
+    "en": "Amount received in MAD"
+  },
+  "Date de réception": { "ar": "تاريخ الاستلام", "en": "Received on" },
+  "Référence du règlement vérifié": {
+    "ar": "مرجع الدفع المتحقق منه",
+    "en": "Verified payment reference"
+  },
+  "Enregistrer le règlement": { "ar": "تسجيل الدفع", "en": "Record payment" },
+  "Rappeler": { "ar": "إرسال تذكير", "en": "Send reminder" },
+  "Ajouter une dépense": { "ar": "إضافة مصروف", "en": "Add expense" },
+  "Objet": { "ar": "الموضوع", "en": "Subject" },
+  "Combien ? (MAD)": { "ar": "كم المبلغ بالدرهم؟", "en": "How much? (MAD)" },
+  "Date limite": { "ar": "آخر أجل", "en": "Deadline" },
+  "Pour qui ?": { "ar": "لمن؟", "en": "Split between whom?" },
+  "Partager la dépense": { "ar": "تقسيم المصروف", "en": "Split expense" },
+  "Vos échanges": { "ar": "محادثاتكم", "en": "Your conversations" },
+  "Chaque conversation concerne un seul lot et ses habitants autorisés.": {
+    "ar": "كل محادثة تخص وحدة واحدة وسكانها المخوّلين.",
+    "en": "Each conversation is private to one unit and its authorised residents."
+  },
+  "Syndic": { "ar": "السنديك", "en": "Manager" },
+  "Habitant": { "ar": "ساكن", "en": "Resident" },
+  "Votre message": { "ar": "رسالتك", "en": "Your message" },
+  "Envoyer": { "ar": "إرسال", "en": "Send" },
+  "Aucun lot associé.": {
+    "ar": "لا توجد وحدة مرتبطة بحسابك.",
+    "en": "No unit linked yet."
+  },
+  "Réunions": { "ar": "الاجتماعات", "en": "Meetings" },
+  "· Heure du Maroc": { "ar": "· بتوقيت المغرب", "en": "· Morocco time" },
+  "Aucune réunion programmée.": {
+    "ar": "لا توجد اجتماعات مبرمجة.",
+    "en": "No meetings scheduled."
+  },
+  "Programmer une réunion": {
+    "ar": "برمجة اجتماع",
+    "en": "Schedule a meeting"
+  },
+  "Date et heure au Maroc": {
+    "ar": "التاريخ والوقت بالمغرب",
+    "en": "Date and time in Morocco"
+  },
+  "Le fuseau horaire du Maroc est appliqué automatiquement.": {
+    "ar": "يُطبّق توقيت المغرب تلقائياً.",
+    "en": "Morocco’s time zone is applied automatically."
+  },
+  "Lieu ou lien de réunion": {
+    "ar": "المكان أو رابط الاجتماع",
+    "en": "Meeting location or link"
+  },
+  "Ordre du jour": { "ar": "جدول الأعمال", "en": "Agenda" },
+  "Programmer": { "ar": "برمجة", "en": "Schedule" },
+  "Un rappel dans le site apparaît lors d’une visite dans les 24 heures précédant la réunion.": {
+    "ar": "يظهر تذكير داخل الموقع عند زيارته خلال 24 ساعة قبل الاجتماع.",
+    "en": "An in-app reminder appears when you visit within 24 hours before the meeting."
+  },
+  "Marquer comme lu": { "ar": "تحديد كمقروء", "en": "Mark as read" },
+  "Aucune notification.": {
+    "ar": "لا توجد إشعارات.",
+    "en": "No notifications."
+  },
+  "Dépenses et soldes →": {
+    "ar": "المصاريف والأرصدة ←",
+    "en": "Expenses and balances →"
+  },
+  "Écrire au syndic →": {
+    "ar": "مراسلة السنديك ←",
+    "en": "Message your manager →"
+  },
+  "Signaler un problème →": {
+    "ar": "الإبلاغ عن مشكل ←",
+    "en": "Report an issue →"
+  },
+  "Exporter mes comptes →": {
+    "ar": "تصدير حساباتي ←",
+    "en": "Export my accounts →"
+  },
+  "Résidents et activités": {
+    "ar": "السكان والأنشطة",
+    "en": "Residents and activities"
+  },
+  "Invitez les occupants d’un lot et partagez les actualités de leur résidence.": {
+    "ar": "ادعُ سكان الوحدة وشارك أخبار الإقامة.",
+    "en": "Invite residents and share residence news."
+  },
+  "Inviter par lien": { "ar": "الدعوة عبر رابط", "en": "Invite with a link" },
+  "Créer un lien d’invitation": {
+    "ar": "إنشاء رابط دعوة",
+    "en": "Create invitation link"
+  },
+  "Révoqué": { "ar": "ملغى", "en": "Revoked" },
+  "Compte créé": { "ar": "تم إنشاء الحساب", "en": "Account created" },
+  "Expiré": { "ar": "منتهي الصلاحية", "en": "Expired" },
+  "Révoquer": { "ar": "إلغاء", "en": "Revoke" },
+  "Créer un accès habitant": {
+    "ar": "إنشاء حساب لساكن",
+    "en": "Create resident access"
+  },
+  "Créer l’accès sans e-mail": {
+    "ar": "إنشاء الحساب دون إرسال بريد",
+    "en": "Create access without email"
+  },
+  "Associer un compte existant par invitation": {
+    "ar": "ربط حساب موجود عبر دعوة",
+    "en": "Invite an existing account"
+  },
+  "E-mail du résident": {
+    "ar": "البريد الإلكتروني للساكن",
+    "en": "Resident email"
+  },
+  "Créer l’invitation": { "ar": "إنشاء الدعوة", "en": "Create invitation" },
+  "Le résident devra créer son compte avec cette adresse, la vérifier et accepter l’invitation. Partagez-lui :": {
+    "ar": "يستخدم الساكن هذا البريد لقبول الدعوة. شارك معه:",
+    "en": "The resident uses this email to accept the invitation. Share:"
+  },
+  "Ajoutez d’abord une résidence et un lot.": {
+    "ar": "أضف أولاً إقامة ووحدة.",
+    "en": "Add a residence and unit first."
+  },
+  "Publier une activité": { "ar": "نشر نشاط", "en": "Publish an activity" },
+  "Titre": { "ar": "العنوان", "en": "Title" },
+  "Message": { "ar": "الرسالة", "en": "Message" },
+  "Publier aux résidents": {
+    "ar": "النشر للسكان",
+    "en": "Publish to residents"
+  },
+  "Ajoutez d’abord une résidence.": {
+    "ar": "أضف إقامة أولاً.",
+    "en": "Add a residence first."
+  },
+  "Invitations et accès": {
+    "ar": "الدعوات والصلاحيات",
+    "en": "Invitations and access"
+  },
+  "Aucune invitation.": { "ar": "لا توجد دعوات.", "en": "No invitations." },
+  "Accès accepté": { "ar": "تم قبول الدعوة", "en": "Access accepted" },
+  "Invitation expirée": {
+    "ar": "انتهت صلاحية الدعوة",
+    "en": "Invitation expired"
+  },
+  "Révoquer l’accès": { "ar": "إلغاء الصلاحية", "en": "Revoke access" },
+  "Activités publiées": {
+    "ar": "الأنشطة المنشورة",
+    "en": "Published activities"
+  },
+  "Aucune activité publiée.": {
+    "ar": "لا توجد أنشطة منشورة.",
+    "en": "No activities published."
+  },
+  "Votre compte n’est associé à aucune organisation de syndic. Connectez-vous avec le compte syndic créé dans Administration ; le compte administrateur de plateforme ne reçoit pas automatiquement les droits de ses clients.": {
+    "ar": "حسابك غير مرتبط بمؤسسة سنديك. سجّل الدخول بحساب السنديك الذي أُنشئ من لوحة الإدارة؛ حساب مدير المنصة لا يحصل تلقائياً على صلاحيات العملاء.",
+    "en": "Your account is not linked to a management organisation. Sign in with the manager account created in Administration; platform administrators do not automatically receive client permissions."
+  },
+  "Créez votre première résidence": {
+    "ar": "أنشئ إقامتك الأولى",
+    "en": "Create your first residence"
+  },
+  "Organisation": { "ar": "المؤسسة", "en": "Organisation" },
+  "Nom de la résidence": { "ar": "اسم الإقامة", "en": "Residence name" },
+  "Adresse": { "ar": "العنوان", "en": "Address" },
+  "Ville": { "ar": "المدينة", "en": "City" },
+  "Créer la résidence": { "ar": "إنشاء الإقامة", "en": "Create residence" },
+  "Ajoutez un appartement pour inviter un habitant": {
+    "ar": "أضف شقة لدعوة ساكن",
+    "en": "Add an apartment to invite a resident"
+  },
+  "Ajouter l’appartement": { "ar": "إضافة الشقة", "en": "Add apartment" },
+  "Les invitations sont momentanément indisponibles. Réessayez ou contactez votre administrateur.": {
+    "ar": "الدعوات غير متاحة مؤقتاً. أعد المحاولة أو اتصل بالمسؤول.",
+    "en": "Invitations are temporarily unavailable. Try again or contact your administrator."
+  },
+  "Vue d’ensemble": { "ar": "نظرة عامة", "en": "Overview" },
+  "Administration": { "ar": "الإدارة", "en": "Administration" },
+  "Votre espace de gestion": {
+    "ar": "مساحة التسيير الخاصة بك",
+    "en": "Your management space"
+  },
+  "Vos copropriétés, au même endroit.": {
+    "ar": "كل إقاماتك في مكان واحد.",
+    "en": "Your residences, all in one place."
+  },
+  "Ajouter une résidence": { "ar": "إضافة إقامة", "en": "Add residence" },
+  "Organisations": { "ar": "المؤسسات", "en": "Organisations" },
+  "Vos résidences": { "ar": "إقاماتك", "en": "Your residences" },
+  "Retrouvez les copropriétés de vos organisations.": {
+    "ar": "اطّلع على إقامات مؤسساتك.",
+    "en": "Find the residences managed by your organisations."
+  },
+  "Voir les lots": { "ar": "عرض الوحدات", "en": "View units" },
+  "Aucune résidence pour le moment. Votre organisation doit être attribuée par l’administration ; ensuite, ajoutez votre première résidence.": {
+    "ar": "لا توجد إقامة حالياً. بعد ربط مؤسستك من الإدارة، أضف إقامتك الأولى.",
+    "en": "No residences yet. Once the administrator assigns your organisation, add your first residence."
+  },
+  "Actions rapides": { "ar": "إجراءات سريعة", "en": "Quick actions" },
+  "Votre organisation est attribuée par l’administration.": {
+    "ar": "يتم تعيين مؤسستك من طرف الإدارة.",
+    "en": "Your organisation is assigned by the administrator."
+  },
+  "Gérer les habitants": { "ar": "تسيير السكان", "en": "Manage residents" },
+  "Finances et messages": {
+    "ar": "الحسابات والرسائل",
+    "en": "Finances and messages"
+  },
+  "Suivre les incidents": { "ar": "تتبع المشاكل", "en": "Track incidents" },
+  "Votre parcours de démarrage": {
+    "ar": "خطوات البداية",
+    "en": "Getting started"
+  },
+  "1. Recevoir votre accès → 2. Ajouter une résidence → 3. Enregistrer les lots": {
+    "ar": "1. استلام الحساب ← 2. إضافة إقامة ← 3. تسجيل الوحدات",
+    "en": "1. Receive access → 2. Add a residence → 3. Register units"
+  },
+  "Un carnet d’adresses pour vos copropriétés.": {
+    "ar": "دليل عناوين إقاماتك.",
+    "en": "An address book for your residences."
+  },
+  "Votre portefeuille": { "ar": "الإقامات المسيرة", "en": "Your portfolio" },
+  "lots": { "ar": "وحدات", "en": "units" },
+  "Vos résidences apparaîtront ici après leur création.": {
+    "ar": "ستظهر إقاماتك هنا بعد إنشائها.",
+    "en": "Your residences will appear here once created."
+  },
+  "Commencez par": { "ar": "ابدأ بـ", "en": "Start by" },
+  "créer une organisation": {
+    "ar": "إنشاء مؤسسة",
+    "en": "creating an organisation"
+  },
+  "Appartements, commerces et parkings de vos résidences.": {
+    "ar": "الشقق والمحلات ومواقف السيارات في إقاماتك.",
+    "en": "Apartments, shops and parking spaces in your residences."
+  },
+  "Registre des lots": { "ar": "سجل الوحدات", "en": "Unit register" },
+  "Type": { "ar": "النوع", "en": "Type" },
+  "Quote-part": { "ar": "الحصة", "en": "Share" },
+  "Commerce": { "ar": "محل تجاري", "en": "Shop" },
+  "Parking": { "ar": "موقف سيارات", "en": "Parking" },
+  "Aucun lot enregistré. Ajoutez votre premier lot pour structurer votre résidence.": {
+    "ar": "لم تُسجّل أي وحدة. أضف وحدتك الأولى لتنظيم الإقامة.",
+    "en": "No units registered. Add your first unit to organise your residence."
+  },
+  "Ajouter un lot": { "ar": "إضافة وحدة", "en": "Add unit" },
+  "Libellé du lot": { "ar": "اسم الوحدة", "en": "Unit label" },
+  "Poids relatif pour une future répartition des charges. Aucune charge n’est générée dans cette version.": {
+    "ar": "وزن نسبي لتوزيع التكاليف. لا يتم إنشاء مساهمة بهذه الخطوة.",
+    "en": "Relative weight for allocating costs. This step does not create a charge."
+  },
+  "Enregistrer le lot": { "ar": "حفظ الوحدة", "en": "Save unit" },
+  "ajouter une résidence": { "ar": "إضافة إقامة", "en": "adding a residence" },
+  "Entretien et demandes": {
+    "ar": "الصيانة والطلبات",
+    "en": "Maintenance and requests"
+  },
+  "Incidents": { "ar": "المشاكل", "en": "Incidents" },
+  "Gestion quotidienne": { "ar": "التسيير اليومي", "en": "Daily management" },
+  "Signalez un problème et suivez sa prise en charge.": {
+    "ar": "أبلغ عن مشكل وتابع معالجته.",
+    "en": "Report an issue and track its progress."
+  },
+  "Suivi des demandes": { "ar": "تتبع الطلبات", "en": "Request tracking" },
+  "Aucun incident déclaré.": {
+    "ar": "لا توجد مشاكل مُبلّغ عنها.",
+    "en": "No incidents reported."
+  },
+  "Ouvert": { "ar": "مفتوح", "en": "Open" },
+  "Résolu": { "ar": "تم الحل", "en": "Resolved" },
+  "· Urgent": { "ar": "· عاجل", "en": "· Urgent" },
+  "Compte rendu :": { "ar": "التقرير:", "en": "Report:" },
+  "Compte rendu": { "ar": "التقرير", "en": "Report" },
+  "Mettre à jour": { "ar": "تحديث", "en": "Update" },
+  "Déclarer un incident": {
+    "ar": "الإبلاغ عن مشكل",
+    "en": "Report an incident"
+  },
+  "Description": { "ar": "الوصف", "en": "Description" },
+  "Priorité": { "ar": "الأولوية", "en": "Priority" },
+  "Normale": { "ar": "عادية", "en": "Normal" },
+  "Urgente": { "ar": "عاجلة", "en": "Urgent" },
+  "Déclarer": { "ar": "إرسال البلاغ", "en": "Report" },
+  "Votre syndic doit d’abord vous associer à un lot.": {
+    "ar": "يجب أن يربطك السنديك بوحدة أولاً.",
+    "en": "Your manager must first link you to a unit."
+  },
+  "Votre résidence": { "ar": "إقامتك", "en": "Your residence" },
+  "Bienvenue chez vous.": {
+    "ar": "مرحباً بك في إقامتك.",
+    "en": "Welcome home."
+  },
+  "Invitation indisponible": {
+    "ar": "الدعوة غير متاحة",
+    "en": "Invitation unavailable"
+  },
+  "Rejoindre mon appartement": {
+    "ar": "الانضمام إلى شقتي",
+    "en": "Join my apartment"
+  },
+  "Bienvenue chez vous": { "ar": "مرحباً بك في إقامتك", "en": "Welcome home" },
+  "Bonjour 👋": { "ar": "مرحباً 👋", "en": "Hello 👋" },
+  "Vous êtes invité à rejoindre": {
+    "ar": "أنت مدعو للانضمام إلى",
+    "en": "You are invited to join"
+  },
+  ", gérée par": { "ar": "، بإدارة", "en": ", managed by" },
+  "12 caractères minimum": {
+    "ar": "12 حرفاً على الأقل",
+    "en": "At least 12 characters"
+  },
+  "Rejoindre ma résidence": {
+    "ar": "الانضمام إلى إقامتي",
+    "en": "Join my residence"
+  },
+  "Ce lien a expiré, a déjà été utilisé ou a été révoqué. Demandez un nouveau lien à votre syndic.": {
+    "ar": "انتهت صلاحية هذا الرابط أو استُخدم أو أُلغي. اطلب رابطاً جديداً من السنديك.",
+    "en": "This link has expired, has already been used or was revoked. Ask your manager for a new link."
+  },
+  "Mon espace résident": { "ar": "مساحتي كساكن", "en": "My resident space" },
+  "Chez vous.": { "ar": "في إقامتك.", "en": "Home." },
+  "Signaler un incident": { "ar": "الإبلاغ عن مشكل", "en": "Report an issue" },
+  "Mes cotisations, messages et réunions": {
+    "ar": "مساهماتي ورسائلي واجتماعاتي",
+    "en": "My contributions, messages and meetings"
+  },
+  "Une invitation vous attend": {
+    "ar": "دعوة في انتظارك",
+    "en": "An invitation is waiting"
+  },
+  "Accepter l’invitation": { "ar": "قبول الدعوة", "en": "Accept invitation" },
+  "En attente de votre syndic": {
+    "ar": "في انتظار السنديك",
+    "en": "Waiting for your manager"
+  },
+  "Demandez une invitation à l’adresse de votre compte. Aucun lot n’est encore associé à votre compte.": {
+    "ar": "اطلب دعوة إلى بريد حسابك. لا توجد وحدة مرتبطة بحسابك بعد.",
+    "en": "Ask for an invitation to your account email. No unit is linked to your account yet."
+  },
+  "Activités et annonces": {
+    "ar": "الأنشطة والإعلانات",
+    "en": "Activities and announcements"
+  },
+  "Aucune activité publiée pour le moment.": {
+    "ar": "لا توجد أنشطة منشورة حالياً.",
+    "en": "No activities published yet."
+  },
+  "Accéder à mon espace syndic": {
+    "ar": "الدخول إلى مساحة السنديك",
+    "en": "Open my manager space"
+  },
+  "Créer votre espace": { "ar": "إنشاء مساحتك", "en": "Create your space" },
+  "Heureux de vous retrouver": { "ar": "سعداء بعودتك", "en": "Welcome back" },
+  "Commencez par votre compte, puis créez votre première résidence.": {
+    "ar": "ابدأ بحسابك ثم أنشئ إقامتك الأولى.",
+    "en": "Start with your account, then create your first residence."
+  },
+  "Connectez-vous pour retrouver vos résidences.": {
+    "ar": "سجّل الدخول للوصول إلى إقاماتك.",
+    "en": "Sign in to access your residences."
+  },
+  "12 caractères minimum. Un e-mail de confirmation vous sera envoyé.": {
+    "ar": "12 حرفاً على الأقل. سيُرسل بريد تأكيد.",
+    "en": "At least 12 characters. A confirmation email will be sent."
+  },
+  "Créer mon compte": { "ar": "إنشاء حسابي", "en": "Create my account" },
+  "Votre compte est fourni par votre administrateur ou votre syndic.": {
+    "ar": "يوفر لك المسؤول أو السنديك حسابك.",
+    "en": "Your account is provided by your administrator or manager."
+  },
+  "Accès sur autorisation": {
+    "ar": "الدخول بإذن",
+    "en": "Access by invitation"
+  },
+  "Mot de passe oublié ?": {
+    "ar": "نسيت كلمة المرور؟",
+    "en": "Forgot password?"
+  },
+  "Votre e-mail": { "ar": "بريدك الإلكتروني", "en": "Your email" },
+  "Envoyer le lien": { "ar": "إرسال الرابط", "en": "Send link" },
+  "Accès réservé": { "ar": "دخول مخصص", "en": "Restricted access" },
+  "Ce compte ne dispose pas des droits d’administration de la plateforme.": {
+    "ar": "هذا الحساب لا يملك صلاحيات إدارة المنصة.",
+    "en": "This account does not have platform administrator access."
+  },
+  "Revenir à mon espace": {
+    "ar": "العودة إلى مساحتي",
+    "en": "Back to my space"
+  },
+  "Administration plateforme": {
+    "ar": "إدارة المنصة",
+    "en": "Platform administration"
+  },
+  "Espace syndic": { "ar": "مساحة السنديك", "en": "Manager space" },
+  "Espace résident": { "ar": "مساحة الساكن", "en": "Resident space" },
+  "· Administration": { "ar": "· الإدارة", "en": "· Administration" },
+  "Essai": { "ar": "تجريبي", "en": "Trial" },
+  "Actif": { "ar": "نشط", "en": "Active" },
+  "À régulariser": { "ar": "بانتظار التسوية", "en": "Past due" },
+  "Résilié": { "ar": "ملغى", "en": "Canceled" },
+  "Suspendu": { "ar": "موقوف", "en": "Suspended" },
+  "Gestion de la plateforme": {
+    "ar": "تسيير المنصة",
+    "en": "Platform management"
+  },
+  "Organisations clientes et suivi des abonnements.": {
+    "ar": "المؤسسات العميلة وتتبع الاشتراكات.",
+    "en": "Client organisations and subscription tracking."
+  },
+  "Abonnements actifs": {
+    "ar": "الاشتراكات النشطة",
+    "en": "Active subscriptions"
+  },
+  "À configurer": { "ar": "بحاجة للإعداد", "en": "To configure" },
+  "Créer un compte syndic": {
+    "ar": "إنشاء حساب سنديك",
+    "en": "Create manager account"
+  },
+  "La création des comptes nécessite la variable serveur SUPABASE_SECRET_KEY dans Vercel, puis un redéploiement. Les comptes existants continuent de fonctionner.": {
+    "ar": "إنشاء الحسابات يتطلب إعداد مفتاح الخادم في Vercel ثم إعادة النشر. الحسابات الموجودة تستمر في العمل.",
+    "en": "Account creation requires SUPABASE_SECRET_KEY in Vercel followed by redeployment. Existing accounts continue to work."
+  },
+  "Le compte est activé immédiatement sans e-mail de confirmation.": {
+    "ar": "يُفعّل الحساب فوراً دون بريد تأكيد.",
+    "en": "The account is activated immediately without a confirmation email."
+  },
+  "Créer le compte syndic": {
+    "ar": "إنشاء حساب السنديك",
+    "en": "Create manager account"
+  },
+  "Abonnements des syndics": {
+    "ar": "اشتراكات السنديك",
+    "en": "Manager subscriptions"
+  },
+  "Suivi manuel. Chaque modification exige un motif et conserve un historique. Aucun encaissement automatique n’est effectué.": {
+    "ar": "متابعة يدوية. كل تعديل يتطلب سبباً ويُحفظ في السجل. لا يتم تحصيل آلي.",
+    "en": "Manual tracking. Each change requires a reason and is logged. No automatic collection is performed."
+  },
+  "Aucune organisation cliente pour le moment.": {
+    "ar": "لا توجد مؤسسة عميلة حالياً.",
+    "en": "No client organisations yet."
+  },
+  "Non configuré": { "ar": "غير مُعدّ", "en": "Not configured" },
+  "Offre": { "ar": "الباقة", "en": "Plan" },
+  "Essentiel": { "ar": "أساسي", "en": "Essential" },
+  "Pro": { "ar": "احترافي", "en": "Pro" },
+  "Business": { "ar": "أعمال", "en": "Business" },
+  "Statut": { "ar": "الحالة", "en": "Status" },
+  "Fin de période (fin de journée UTC)": {
+    "ar": "نهاية الفترة (نهاية اليوم بتوقيت UTC)",
+    "en": "Period end (end of day UTC)"
+  },
+  "Motif / référence de validation": {
+    "ar": "السبب / مرجع المصادقة",
+    "en": "Reason / approval reference"
+  },
+  "Enregistrer l’abonnement": {
+    "ar": "حفظ الاشتراك",
+    "en": "Save subscription"
+  },
+  "Dernières modifications": { "ar": "آخر التعديلات", "en": "Recent changes" },
+  "Aucune modification enregistrée.": {
+    "ar": "لا توجد تعديلات مسجلة.",
+    "en": "No changes recorded."
+  },
+  "Les statuts sont un suivi commercial. Le blocage automatique des opérations et les paiements en ligne ne sont pas activés.": {
+    "ar": "الحالات مخصصة للمتابعة التجارية. إيقاف العمليات الآلي والدفع عبر الإنترنت غير مفعّلين.",
+    "en": "Statuses track commercial activity. Automatic operation restrictions and online payments are not enabled."
+  },
+  "Une interruption temporaire": {
+    "ar": "توقف مؤقت",
+    "en": "A temporary interruption"
+  },
+  "Vérifiez la configuration Supabase et réessayez.": {
+    "ar": "تحقق من إعدادات Supabase وأعد المحاولة.",
+    "en": "Check your Supabase configuration and try again."
+  },
+  "Réessayer": { "ar": "إعادة المحاولة", "en": "Try again" },
+  "Chargement de votre espace…": {
+    "ar": "جارٍ تحميل مساحتك…",
+    "en": "Loading your space…"
+  },
+  "Les données sont temporairement indisponibles. Vérifiez la connexion et l’installation de la migration SyndiConnect.": {
+    "ar": "البيانات غير متاحة مؤقتاً. تحقق من الاتصال وإعداد قاعدة البيانات.",
+    "en": "Data is temporarily unavailable. Check the connection and database setup."
+  },
+  "Lien copié": { "ar": "تم نسخ الرابط", "en": "Link copied" },
+  "Copier l’invitation": { "ar": "نسخ الدعوة", "en": "Copy invitation" },
+  "Ouvrir": { "ar": "فتح", "en": "Open" },
+  "L’expérience": { "ar": "التجربة", "en": "The experience" },
+  "Comment ça marche": { "ar": "كيف تعمل", "en": "How it works" },
+  "La résidence, côté humain.": {
+    "ar": "الإقامة، بروح إنسانية.",
+    "en": "The human side of residence life."
+  },
+  "Bien vivre ensemble.": {
+    "ar": "نعيش معاً بشكل أفضل.",
+    "en": "Better living, together."
+  },
+  "Tout simplement.": { "ar": "بكل بساطة.", "en": "Simply." },
+  "Les comptes sont clairs. Les échanges sont simples. Toute votre résidence se retrouve au même endroit.": {
+    "ar": "حسابات واضحة وتواصل بسيط. كل إقامتك في مكان واحد.",
+    "en": "Clear accounts. Simple conversations. Your whole residence, together in one place."
+  },
+  "Accéder à ma résidence": {
+    "ar": "الدخول إلى إقامتي",
+    "en": "Open my residence"
+  },
+  "Découvrir": { "ar": "اكتشف", "en": "Discover" },
+  "Accès privés": { "ar": "وصول خاص", "en": "Private access" },
+  "Syndics et habitants": {
+    "ar": "السنديك والسكان",
+    "en": "Managers and residents"
+  },
+  "Moins de questions.": { "ar": "أسئلة أقل.", "en": "Fewer questions." },
+  "Plus de transparence.": { "ar": "شفافية أكثر.", "en": "More transparency." },
+  "Votre quotidien, en mieux": {
+    "ar": "حياة يومية أفضل",
+    "en": "A better everyday"
+  },
+  "Une résidence connectée.": {
+    "ar": "إقامة متصلة.",
+    "en": "A connected residence."
+  },
+  "Une gestion apaisée.": {
+    "ar": "تسيير براحة بال.",
+    "en": "Management with peace of mind."
+  },
+  "Retrouvez les dépenses partagées, les règlements et le montant restant à payer.": {
+    "ar": "اطّلع على المصاريف المشتركة والمدفوعات والمبالغ المتبقية.",
+    "en": "See shared expenses, payments and your remaining balance."
+  },
+  "On se parle.": { "ar": "نتواصل معاً.", "en": "Let’s talk." },
+  "Échangez avec votre syndic, recevez les annonces et suivez vos demandes.": {
+    "ar": "تواصل مع السنديك وتلقّ الإعلانات وتابع طلباتك.",
+    "en": "Talk to your manager, receive announcements and track your requests."
+  },
+  "Rien ne vous échappe.": { "ar": "لا يفوتك شيء.", "en": "Stay in the loop." },
+  "Réunions, activités et rappels : gardez le fil de la vie de votre résidence.": {
+    "ar": "اجتماعات وأنشطة وتذكيرات: ابقَ على اطلاع بحياة إقامتك.",
+    "en": "Meetings, activities and reminders: keep up with residence life."
+  },
+  "Un lien.": { "ar": "رابط واحد.", "en": "One link." },
+  "Et vous êtes chez vous.": {
+    "ar": "وأنت في بيتك.",
+    "en": "And you’re home."
+  },
+  "Votre syndic vous invite": {
+    "ar": "السنديك يدعوك",
+    "en": "Your manager invites you"
+  },
+  "Recevez le lien privé de votre appartement.": {
+    "ar": "توصّل بالرابط الخاص بشقتك.",
+    "en": "Receive your apartment’s private link."
+  },
+  "Vous créez votre profil": {
+    "ar": "تُنشئ ملفك الشخصي",
+    "en": "Create your profile"
+  },
+  "Choisissez votre pseudo et vos identifiants.": {
+    "ar": "اختر اسمك المستعار وبيانات الدخول.",
+    "en": "Choose your nickname and login details."
+  },
+  "Votre résidence prend vie": {
+    "ar": "إقامتك تنبض بالحياة",
+    "en": "Your residence comes to life"
+  },
+  "Consultez vos comptes et échangez avec votre syndic.": {
+    "ar": "اطّلع على حساباتك وتواصل مع السنديك.",
+    "en": "Check your accounts and talk to your manager."
+  },
+  "Votre résidence.": { "ar": "إقامتك.", "en": "Your residence." },
+  "Votre nouvel espace commun.": {
+    "ar": "مساحتكم المشتركة الجديدة.",
+    "en": "Your new shared space."
+  },
+  "Votre copropriété, en toute transparence.": {
+    "ar": "إقامتك، بكل شفافية.",
+    "en": "Your residence, with full transparency."
+  },
+  "Connexion": { "ar": "تسجيل الدخول", "en": "Sign in" },
+  "À traiter :": { "ar": "للمعالجة:", "en": "To review:" },
+  "compte(s) syndic": { "ar": "حساب(ات) سانديك", "en": "syndic account(s)" },
+  "virement(s)": { "ar": "تحويل(ات)", "en": "transfer(s)" },
+  "Comptes syndic en attente d’approbation": { "ar": "حسابات السانديك في انتظار الموافقة", "en": "Syndic accounts awaiting approval" },
+  "Aucune demande en attente.": { "ar": "لا توجد طلبات معلقة.", "en": "No pending requests." },
+  "Plan souhaité": { "ar": "الباقة المطلوبة", "en": "Desired plan" },
+  "Approuver": { "ar": "موافقة", "en": "Approve" },
+  "Refuser": { "ar": "رفض", "en": "Reject" },
+  "Virements à vérifier": { "ar": "تحويلات للتحقق", "en": "Transfers to verify" },
+  "Aucun paiement en attente.": { "ar": "لا توجد دفعات معلقة.", "en": "No pending payments." },
+  "mois": { "ar": "شهر", "en": "months" },
+  "Voir la capture du virement": { "ar": "عرض صورة التحويل", "en": "View transfer screenshot" },
+  "Capture indisponible (vérifiez SUPABASE_SECRET_KEY).": { "ar": "الصورة غير متاحة (تحقق من SUPABASE_SECRET_KEY).", "en": "Screenshot unavailable (check SUPABASE_SECRET_KEY)." },
+  "Valider et prolonger": { "ar": "تأكيد وتمديد", "en": "Approve and extend" },
+  "Essai gratuit": { "ar": "تجربة مجانية", "en": "Free trial" },
+  "Standard": { "ar": "عادي", "en": "Standard" },
+  "Entreprise": { "ar": "مؤسسة", "en": "Enterprise" },
+  "Coordonnées bancaires (RIB)": { "ar": "المعلومات البنكية (RIB)", "en": "Bank details (RIB)" },
+  "Affichées aux syndics dans leur page Abonnement.": { "ar": "تظهر للسانديك في صفحة الاشتراك.", "en": "Shown to syndics on their Subscription page." },
+  "Titulaire": { "ar": "صاحب الحساب", "en": "Account holder" },
+  "Banque": { "ar": "البنك", "en": "Bank" },
+  "RIB": { "ar": "RIB", "en": "RIB" },
+  "Instructions": { "ar": "تعليمات", "en": "Instructions" },
+  "Enregistrer le RIB": { "ar": "حفظ RIB", "en": "Save RIB" },
+  "Les paiements se font par virement bancaire : chaque capture est vérifiée manuellement avant prolongation.": { "ar": "الدفع يتم بتحويل بنكي: يتم التحقق من كل صورة يدوياً قبل التمديد.", "en": "Payments are made by bank transfer: each screenshot is checked manually before extension." },
+  "Abonnement": { "ar": "الاشتراك", "en": "Subscription" },
+  "Votre compte n’est associé à aucun syndic.": { "ar": "حسابك غير مرتبط بأي سانديك.", "en": "Your account is not linked to any syndic." },
+  "Mon abonnement": { "ar": "اشتراكي", "en": "My subscription" },
+  "Consultez votre plan, payez par virement bancaire et suivez vos paiements.": { "ar": "اطلع على باقتك، ادفع بتحويل بنكي وتابع مدفوعاتك.", "en": "View your plan, pay by bank transfer and track your payments." },
+  "Plan actuel": { "ar": "الباقة الحالية", "en": "Current plan" },
+  "Jours restants": { "ar": "الأيام المتبقية", "en": "Days left" },
+  "Fin de l’abonnement": { "ar": "نهاية الاشتراك", "en": "Subscription end" },
+  "Coordonnées bancaires": { "ar": "المعلومات البنكية", "en": "Bank details" },
+  "Le RIB sera bientôt disponible. Contactez-nous pour l’obtenir.": { "ar": "سيتوفر RIB قريباً. تواصل معنا للحصول عليه.", "en": "The RIB will be available soon. Contact us to get it." },
+  "Tarifs": { "ar": "الأسعار", "en": "Pricing" },
+  "Standard : 30 DH par mois.": { "ar": "عادي: 30 درهم شهرياً.", "en": "Standard: 30 MAD per month." },
+  "Entreprise : prix sur devis.": { "ar": "مؤسسة: السعر حسب العرض.", "en": "Enterprise: price on quote." },
+  "WhatsApp": { "ar": "واتساب", "en": "WhatsApp" },
+  "Payer ou changer d’abonnement": { "ar": "الدفع أو تغيير الاشتراك", "en": "Pay or change subscription" },
+  "Plan": { "ar": "الباقة", "en": "Plan" },
+  "Durée": { "ar": "المدة", "en": "Duration" },
+  "Montant viré en DH (plan Entreprise uniquement)": { "ar": "المبلغ المحول بالدرهم (باقة المؤسسة فقط)", "en": "Amount transferred in MAD (Enterprise plan only)" },
+  "Référence du virement (facultatif)": { "ar": "مرجع التحويل (اختياري)", "en": "Transfer reference (optional)" },
+  "Capture d’écran du virement": { "ar": "صورة شاشة التحويل", "en": "Transfer screenshot" },
+  "PNG, JPG, WEBP ou PDF · 5 Mo maximum": { "ar": "PNG أو JPG أو WEBP أو PDF · 5 ميغابايت كحد أقصى", "en": "PNG, JPG, WEBP or PDF · 5 MB maximum" },
+  "Envoyer le paiement": { "ar": "إرسال الدفعة", "en": "Send payment" },
+  "Le changement de plan et la prolongation s’appliquent dès la validation du virement par notre équipe.": { "ar": "يتم تطبيق تغيير الباقة والتمديد فور تأكيد التحويل من طرف فريقنا.", "en": "Plan change and extension apply once our team validates the transfer." },
+  "Historique des paiements": { "ar": "سجل المدفوعات", "en": "Payment history" },
+  "Aucun paiement envoyé.": { "ar": "لم يتم إرسال أي دفعة.", "en": "No payment sent." },
+  "Demandes d’adhésion": { "ar": "طلبات الانضمام", "en": "Join requests" },
+  "Utilisateurs de mon espace": { "ar": "مستخدمو فضائي", "en": "Users of my space" },
+  "Aucun habitant pour le moment.": { "ar": "لا يوجد سكان حالياً.", "en": "No residents yet." },
+  "Supprimer": { "ar": "حذف", "en": "Delete" },
+  "Bloquer": { "ar": "حظر", "en": "Block" },
+  "Débloquer": { "ar": "إلغاء الحظر", "en": "Unblock" },
+  "Bloqué": { "ar": "محظور", "en": "Blocked" },
+  "Lien utilisé": { "ar": "تم استخدام الرابط", "en": "Link used" },
+  "Abonnement expiré : renouvelez-le pour continuer.": { "ar": "انتهى الاشتراك: جدده للمتابعة.", "en": "Subscription expired: renew it to continue." },
+  "Jours restants :": { "ar": "الأيام المتبقية:", "en": "Days left:" },
+  "Gérer mon abonnement": { "ar": "إدارة اشتراكي", "en": "Manage my subscription" },
+  "Compte syndic": { "ar": "حساب السانديك", "en": "Syndic account" },
+  "Votre compte attend l’approbation": { "ar": "حسابك في انتظار الموافقة", "en": "Your account is awaiting approval" },
+  "Notre équipe vérifie votre demande pour": { "ar": "فريقنا يتحقق من طلبك لـ", "en": "Our team is reviewing your request for" },
+  "Vous pourrez accéder à votre espace syndic dès sa validation.": { "ar": "ستتمكن من الوصول إلى فضاء السانديك فور الموافقة.", "en": "You will access your syndic space once approved." },
+  "Demande non validée": { "ar": "لم تتم الموافقة على الطلب", "en": "Request not approved" },
+  "Votre demande de compte syndic n’a pas été acceptée. Contactez-nous ou envoyez une nouvelle demande.": { "ar": "لم يتم قبول طلب حساب السانديك. تواصل معنا أو أرسل طلباً جديداً.", "en": "Your syndic account request was not accepted. Contact us or send a new request." },
+  "Demander un compte syndic": { "ar": "طلب حساب سانديك", "en": "Request a syndic account" },
+  "Nom du syndic / de la société": { "ar": "اسم السانديك / الشركة", "en": "Syndic / company name" },
+  "Envoyer la demande": { "ar": "إرسال الطلب", "en": "Send request" },
+  "Besoin d’aide ?": { "ar": "تحتاج مساعدة؟", "en": "Need help?" },
+  "Créer votre compte": { "ar": "أنشئ حسابك", "en": "Create your account" },
+  "Habitant ou syndic, créez votre compte en une minute.": { "ar": "ساكن أو سانديك، أنشئ حسابك في دقيقة.", "en": "Resident or syndic, create your account in a minute." },
+  "Vous avez déjà un compte ?": { "ar": "لديك حساب بالفعل؟", "en": "Already have an account?" },
+  "Créer un compte": { "ar": "إنشاء حساب", "en": "Create an account" },
+  "Un plan pour chaque syndic.": { "ar": "باقة لكل سانديك.", "en": "A plan for every syndic." },
+  "Commencez gratuitement pendant un mois. Le compte des habitants est toujours gratuit.": { "ar": "ابدأ مجاناً لمدة شهر. حساب السكان مجاني دائماً.", "en": "Start free for one month. Resident accounts are always free." },
+  "Contacter l’entreprise": { "ar": "التواصل مع الشركة", "en": "Contact us" },
+  "Contact": { "ar": "اتصل بنا", "en": "Contact" },
+  "Parlons de votre résidence.": { "ar": "لنتحدث عن إقامتك.", "en": "Let's talk about your residence." },
+  "Une question, une offre Entreprise ? Notre équipe vous répond.": { "ar": "سؤال أو عرض للمؤسسات؟ فريقنا يجيبك.", "en": "A question or an Enterprise offer? Our team answers." },
+  "Votre syndic validera votre demande avant l’ouverture de votre accès.": { "ar": "سيؤكد السانديك طلبك قبل فتح وصولك.", "en": "Your syndic will approve your request before opening your access." },
+  "Connecté en tant que": { "ar": "متصل باسم", "en": "Signed in as" },
+  "Rejoindre avec mon compte": { "ar": "الانضمام بحسابي", "en": "Join with my account" },
+  "Se connecter pour rejoindre": { "ar": "تسجيل الدخول للانضمام", "en": "Sign in to join" },
+  "Vous êtes syndic ? Demander un compte syndic": { "ar": "هل أنت سانديك؟ اطلب حساب سانديك", "en": "Are you a syndic? Request a syndic account" },
+  "Pas encore de compte ?": { "ar": "ليس لديك حساب بعد؟", "en": "No account yet?" },
+  "Je suis syndic (gestionnaire de résidence)": { "ar": "أنا سانديك (مسير إقامة)", "en": "I am a syndic (residence manager)" },
+  "Les comptes syndic sont validés par notre équipe avant activation. Vous commencez par un essai gratuit d’un mois.": { "ar": "يتم التحقق من حسابات السانديك من طرف فريقنا قبل التفعيل. تبدأ بتجربة مجانية لمدة شهر.", "en": "Syndic accounts are approved by our team before activation. You start with a one-month free trial." },
+  "0 DH": { "ar": "0 درهم", "en": "0 MAD" },
+  "30 DH": { "ar": "30 درهم", "en": "30 MAD" },
+  "Sur devis": { "ar": "حسب العرض", "en": "On quote" },
+  "pendant 1 mois": { "ar": "لمدة شهر", "en": "for 1 month" },
+  "par mois": { "ar": "شهرياً", "en": "per month" },
+  "Contactez-nous": { "ar": "تواصل معنا", "en": "Contact us" },
+  "Toutes les fonctionnalités": { "ar": "جميع الميزات", "en": "All features" },
+  "Résidences et appartements illimités": { "ar": "إقامات وشقق غير محدودة", "en": "Unlimited residences and apartments" },
+  "Sans engagement": { "ar": "بدون التزام", "en": "No commitment" },
+  "Invitations des habitants par lien": { "ar": "دعوة السكان عبر رابط", "en": "Invite residents by link" },
+  "Cotisations, messages et réunions": { "ar": "المساهمات والرسائل والاجتماعات", "en": "Contributions, messages and meetings" },
+  "Suivi des incidents": { "ar": "تتبع الحوادث", "en": "Incident tracking" },
+  "Plusieurs résidences et gestionnaires": { "ar": "عدة إقامات ومسيرين", "en": "Several residences and managers" },
+  "Accompagnement personnalisé": { "ar": "مرافقة شخصية", "en": "Personal support" },
+  "Tarif adapté à votre parc": { "ar": "سعر ملائم لعقاراتك", "en": "Pricing adapted to your portfolio" },
+  "Commencer l’essai gratuit": { "ar": "ابدأ التجربة المجانية", "en": "Start the free trial" },
+  "Choisir Standard": { "ar": "اختر العادي", "en": "Choose Standard" },
+  "En attente de validation": { "ar": "في انتظار التأكيد", "en": "Awaiting validation" },
+  "Validé": { "ar": "مؤكد", "en": "Approved" },
+  "Refusé": { "ar": "مرفوض", "en": "Rejected" },
+  "Demande d’adhésion en attente de validation par votre syndic.": { "ar": "طلب الانضمام في انتظار موافقة السانديك.", "en": "Join request awaiting your syndic's approval." },
+  "Votre demande d’adhésion a été refusée. Contactez votre syndic.": { "ar": "تم رفض طلب انضمامك. تواصل مع السانديك.", "en": "Your join request was rejected. Contact your syndic." }
+}

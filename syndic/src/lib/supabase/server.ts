@@ -1,0 +1,25 @@
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
+export async function supabase() {
+  const jar = await cookies();
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  if (!url || !key)
+    throw new Error(
+      "Configuration Supabase manquante. Consultez .env.example.",
+    );
+  return createServerClient(url, key, {
+    cookies: {
+      getAll: () => jar.getAll(),
+      setAll: (values) => {
+        try {
+          values.forEach(({ name, value, options }) =>
+            jar.set(name, value, options),
+          );
+        } catch {
+          /* Proxy handles refresh during rendering. */
+        }
+      },
+    },
+  });
+}
