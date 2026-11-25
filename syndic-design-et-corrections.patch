@@ -1,0 +1,1094 @@
+From 0647efac1ea2c41c72770faed5d071f5832c048a Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 25 Nov 2026 14:53:42 +0000
+Subject: [PATCH 1/2] =?UTF-8?q?Mise=20=C3=A0=20jour=20de=20s=C3=A9curit?=
+ =?UTF-8?q?=C3=A9=20:=20Next.js=2016.4.6?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Corrige les failles signalées par npm audit sur next 16.0.0 - 16.4.4 (fuites de cache,
+exposition de cookies HttpOnly sur Edge, contournement du rejet SVG…). 0 vulnérabilité restante.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01UxmYueNHCepZfuPHaaGnop
+---
+ package-lock.json | 80 +++++++++++++++++++++++------------------------
+ package.json      |  2 +-
+ 2 files changed, 41 insertions(+), 41 deletions(-)
+
+diff --git a/package-lock.json b/package-lock.json
+index 134ae42..5ec44c4 100644
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -13,7 +13,7 @@
+         "class-variance-authority": "0.7.1",
+         "clsx": "2.1.1",
+         "lucide-react": "1.66.0",
+-        "next": "16.4.3",
++        "next": "16.4.6",
+         "qrcode": "1.5.4",
+         "react": "19.3.1",
+         "react-dom": "19.3.1",
+@@ -622,15 +622,15 @@
+       }
+     },
+     "node_modules/@next/env": {
+-      "version": "16.4.3",
+-      "resolved": "https://registry.npmjs.org/@next/env/-/env-16.4.3.tgz",
+-      "integrity": "sha512-a7tz1QCcWWkwC/rPJcPMJk/UNRu9CFhDd3OHYE5hddbJrs8BqRTalxI6GlKCWEGzRLHN+S/B7a4PAHCtm25aBQ==",
++      "version": "16.4.6",
++      "resolved": "https://registry.npmjs.org/@next/env/-/env-16.4.6.tgz",
++      "integrity": "sha512-SunBjJ6t+oBtecS3dTjdVuMhUogP5wD/vrGL5EVuQYM1iS4O5ilL51HkiJ3sPjMzRHiCChvr4dbaSJbR7F3lxA==",
+       "license": "MIT"
+     },
+     "node_modules/@next/swc-darwin-arm64": {
+-      "version": "16.4.3",
+-      "resolved": "https://registry.npmjs.org/@next/swc-darwin-arm64/-/swc-darwin-arm64-16.4.3.tgz",
+-      "integrity": "sha512-4yq5EXBt+VDtAZwTyfijaFp5D2C5oz3Ikw5a2kiX2K9nw72vrZX2q5UuAlkPtUMO1tQz6JTKpaKWjS7OOefTDQ==",
++      "version": "16.4.6",
++      "resolved": "https://registry.npmjs.org/@next/swc-darwin-arm64/-/swc-darwin-arm64-16.4.6.tgz",
++      "integrity": "sha512-kJ4VVZkley17xKaJx72QN2IBqjrj7zenCQZaUF0l9ShS/1Mt2kW4+Z5KGG6vgr3L/J562xTOizVyM1iA/u5nlg==",
+       "cpu": [
+         "arm64"
+       ],
+@@ -644,9 +644,9 @@
+       }
+     },
+     "node_modules/@next/swc-darwin-x64": {
+-      "version": "16.4.3",
+-      "resolved": "https://registry.npmjs.org/@next/swc-darwin-x64/-/swc-darwin-x64-16.4.3.tgz",
+-      "integrity": "sha512-1Rvkn/LUhnEF8WxnRkOrqGhbwXui1bkWFxONKIbN+r7C+9KHDSZ+iUoj4CzymVMWUyZIyx9szcb9+kbKhD500A==",
++      "version": "16.4.6",
++      "resolved": "https://registry.npmjs.org/@next/swc-darwin-x64/-/swc-darwin-x64-16.4.6.tgz",
++      "integrity": "sha512-eIPGZIqC+8JKaeZmvnCANJQF4xWkkHqSnAAajtFxgwDMAOnCgxNvP52SeWZ41PyVwoe+Le/NQuZSaQ8j7YshSA==",
+       "cpu": [
+         "x64"
+       ],
+@@ -660,9 +660,9 @@
+       }
+     },
+     "node_modules/@next/swc-linux-arm64-gnu": {
+-      "version": "16.4.3",
+-      "resolved": "https://registry.npmjs.org/@next/swc-linux-arm64-gnu/-/swc-linux-arm64-gnu-16.4.3.tgz",
+-      "integrity": "sha512-dCKpXErGg3abUM6t5JTJV/ottVBTStJB5lRJTbgdUdQaQ+jNHiK56Hsc0YAEg/rinSh42hYG3HWiYmEMdilnxg==",
++      "version": "16.4.6",
++      "resolved": "https://registry.npmjs.org/@next/swc-linux-arm64-gnu/-/swc-linux-arm64-gnu-16.4.6.tgz",
++      "integrity": "sha512-9nI6O8vvczH2D9ZNdMGqb/3NuT15T9ksOZnAmx9/gjF2cOi74+xxyf1Hk96uIMfm14c9y6wHeBq6SH8g6udvcA==",
+       "cpu": [
+         "arm64"
+       ],
+@@ -676,9 +676,9 @@
+       }
+     },
+     "node_modules/@next/swc-linux-arm64-musl": {
+-      "version": "16.4.3",
+-      "resolved": "https://registry.npmjs.org/@next/swc-linux-arm64-musl/-/swc-linux-arm64-musl-16.4.3.tgz",
+-      "integrity": "sha512-WwYbhWkhYBvBtib1K4W0kL8MW2snBD2A5b3SN4vPpqalZbZs5+bQ1yzAdepVoOqrFfEW3dmREy4Zs1MrWcrFbw==",
++      "version": "16.4.6",
++      "resolved": "https://registry.npmjs.org/@next/swc-linux-arm64-musl/-/swc-linux-arm64-musl-16.4.6.tgz",
++      "integrity": "sha512-7/qPhTxDp2ScluOJOhLuhWmlA17o1yZ0SIgpISBCpBxXgtnK4+KGywBpFkfLPiU1rnSM1faFGzYkH6i7JdTrqA==",
+       "cpu": [
+         "arm64"
+       ],
+@@ -692,9 +692,9 @@
+       }
+     },
+     "node_modules/@next/swc-linux-x64-gnu": {
+-      "version": "16.4.3",
+-      "resolved": "https://registry.npmjs.org/@next/swc-linux-x64-gnu/-/swc-linux-x64-gnu-16.4.3.tgz",
+-      "integrity": "sha512-QymWvfUwDEC5/lpJOsxX5VAbyoR2D13+2Jsjz4be7gT4LPqEgdpkeLIR/HFfCLgKzoMhpJbp6I/JnogyNZHcaA==",
++      "version": "16.4.6",
++      "resolved": "https://registry.npmjs.org/@next/swc-linux-x64-gnu/-/swc-linux-x64-gnu-16.4.6.tgz",
++      "integrity": "sha512-oOpbNa8XOW1qCGd9VvzC4fbkkRxEls7/WI6tz+YHC0xRA7KpV1U7DrAnCPjzVyOk/karzWEepCOcTIDmwK8FwQ==",
+       "cpu": [
+         "x64"
+       ],
+@@ -708,9 +708,9 @@
+       }
+     },
+     "node_modules/@next/swc-linux-x64-musl": {
+-      "version": "16.4.3",
+-      "resolved": "https://registry.npmjs.org/@next/swc-linux-x64-musl/-/swc-linux-x64-musl-16.4.3.tgz",
+-      "integrity": "sha512-Vmjd9D7DpA4Vv3cUlr82QWgJD/BQZmns801vtC5VWHg6jCIA4a5vMKpQnfrM2pyCrp2eV0ENdUg4PlN3bAc2Yw==",
++      "version": "16.4.6",
++      "resolved": "https://registry.npmjs.org/@next/swc-linux-x64-musl/-/swc-linux-x64-musl-16.4.6.tgz",
++      "integrity": "sha512-aM8CZ+OR2EwXaAYw7KGkW2GDmNDsLBIRe1MMRZCJPTdw/xhTD0IMUVO4sf3KqrzuRouGzwwLZn34+gFeVXiUQA==",
+       "cpu": [
+         "x64"
+       ],
+@@ -724,9 +724,9 @@
+       }
+     },
+     "node_modules/@next/swc-win32-arm64-msvc": {
+-      "version": "16.4.3",
+-      "resolved": "https://registry.npmjs.org/@next/swc-win32-arm64-msvc/-/swc-win32-arm64-msvc-16.4.3.tgz",
+-      "integrity": "sha512-lG1pPdPLk7gTyGb00n5JIMLdBJgjb+UEhSdZvFbhUMg0DyC6z4B7RnpSKF9VCd4imkLObVbXOFA0kFCpw7yFow==",
++      "version": "16.4.6",
++      "resolved": "https://registry.npmjs.org/@next/swc-win32-arm64-msvc/-/swc-win32-arm64-msvc-16.4.6.tgz",
++      "integrity": "sha512-U0p7/tEtqvHX2crhd841CDwKtp5CFkKXVjOhmfccR3Pvp64sj8KBwRqsvltqLOwVBbj0NtkxwXSDpEHYGbxeXQ==",
+       "cpu": [
+         "arm64"
+       ],
+@@ -740,9 +740,9 @@
+       }
+     },
+     "node_modules/@next/swc-win32-x64-msvc": {
+-      "version": "16.4.3",
+-      "resolved": "https://registry.npmjs.org/@next/swc-win32-x64-msvc/-/swc-win32-x64-msvc-16.4.3.tgz",
+-      "integrity": "sha512-NmQC9RkJdnPXRaMxtkCzobB3teVjqF33oSOnwDfi+XYGWWYpt+xlGK3mtktSKLbdjwaWbJu2OkkMiRFGUUncKg==",
++      "version": "16.4.6",
++      "resolved": "https://registry.npmjs.org/@next/swc-win32-x64-msvc/-/swc-win32-x64-msvc-16.4.6.tgz",
++      "integrity": "sha512-3ZG15/5WIdlTQsIEvc9sPTTSL5XFrlLklIKmfF4fwsDnoAhu6NcBDXsk3mbGxNyo6aVLEGex+fHCv2MahY7a9g==",
+       "cpu": [
+         "x64"
+       ],
+@@ -2569,12 +2569,12 @@
+       }
+     },
+     "node_modules/next": {
+-      "version": "16.4.3",
+-      "resolved": "https://registry.npmjs.org/next/-/next-16.4.3.tgz",
+-      "integrity": "sha512-OqxKTGi9u80FydydsMNYNjnuje9Au+kvHlt2GZ//ftdpDHm1dxKqAaENoOOTX5wKzn+9vaKUNIfZeyZUuLhCnA==",
++      "version": "16.4.6",
++      "resolved": "https://registry.npmjs.org/next/-/next-16.4.6.tgz",
++      "integrity": "sha512-QZJiYhaZLJMo2KpkQGQIwvmd79WVsAWeYIU554a8d7zArS3si/IRy3lBNV/rtYhE70oLwdLYhPAXLPx8HwcwtA==",
+       "license": "MIT",
+       "dependencies": {
+-        "@next/env": "16.4.3",
++        "@next/env": "16.4.6",
+         "@swc/helpers": "0.5.23",
+         "baseline-browser-mapping": "^2.9.19",
+         "caniuse-lite": "^1.0.30001579",
+@@ -2588,14 +2588,14 @@
+         "node": ">=20.9.0"
+       },
+       "optionalDependencies": {
+-        "@next/swc-darwin-arm64": "16.4.3",
+-        "@next/swc-darwin-x64": "16.4.3",
+-        "@next/swc-linux-arm64-gnu": "16.4.3",
+-        "@next/swc-linux-arm64-musl": "16.4.3",
+-        "@next/swc-linux-x64-gnu": "16.4.3",
+-        "@next/swc-linux-x64-musl": "16.4.3",
+-        "@next/swc-win32-arm64-msvc": "16.4.3",
+-        "@next/swc-win32-x64-msvc": "16.4.3",
++        "@next/swc-darwin-arm64": "16.4.6",
++        "@next/swc-darwin-x64": "16.4.6",
++        "@next/swc-linux-arm64-gnu": "16.4.6",
++        "@next/swc-linux-arm64-musl": "16.4.6",
++        "@next/swc-linux-x64-gnu": "16.4.6",
++        "@next/swc-linux-x64-musl": "16.4.6",
++        "@next/swc-win32-arm64-msvc": "16.4.6",
++        "@next/swc-win32-x64-msvc": "16.4.6",
+         "sharp": "^0.35.5"
+       },
+       "peerDependencies": {
+diff --git a/package.json b/package.json
+index 5b969e0..c239053 100644
+--- a/package.json
++++ b/package.json
+@@ -15,7 +15,7 @@
+     "class-variance-authority": "0.7.1",
+     "clsx": "2.1.1",
+     "lucide-react": "1.66.0",
+-    "next": "16.4.3",
++    "next": "16.4.6",
+     "qrcode": "1.5.4",
+     "react": "19.3.1",
+     "react-dom": "19.3.1",
+-- 
+2.43.0
+
+
+From 4ee123d76ddf785a243fa720070c82ba7e9efa7a Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 25 Nov 2026 14:58:50 +0000
+Subject: [PATCH 2/2] Refonte du design et corrections de bugs
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Design :
+- Une seule couleur de marque (vert SyndiConnect) pour boutons, liens, onglets et accents,
+  surfaces plus douces (ombres, coins arrondis), focus des champs visible
+- Nouveau tableau de bord syndic : salutation, chiffres clés (immeubles, appartements,
+  habitants, reste à encaisser), alerte des règlements à confirmer, liste des immeubles
+  et actions rapides
+- Onglets de l'espace syndic : la page en cours est mise en évidence
+- Sélecteur de langue à drapeau partout ; l'ancien sélecteur flottant (qui masquait les
+  champs sur téléphone) est supprimé
+- Accueil sur téléphone : bouton « Mon espace » visible, carte flottante qui masquait le texte retirée
+
+Bugs :
+- Notifications cliquables : ouvrent la bonne page (dépenses, discussion, abonnement…) et
+  passent en lu ; l'ancien lien /app/abonnement est redirigé vers /abonnement
+- Lien d'invitation par appartement : le message « Invitation indisponible » se perdait
+  (redirection dans un try/catch)
+- Imports inutilisés supprimés
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01UxmYueNHCepZfuPHaaGnop
+---
+ src/app/api/notifications/open/route.ts |  18 ++
+ src/app/app/layout.tsx                  |  29 +--
+ src/app/app/page.tsx                    | 186 ++++++++++------
+ src/app/globals.css                     | 284 +++++++++++++++++++++++-
+ src/app/layout.tsx                      |   5 +-
+ src/app/operations/page.tsx             |   5 +-
+ src/app/page.tsx                        |   2 +
+ src/app/rejoindre/[token]/actions.ts    |  17 +-
+ src/components/brand.tsx                |   2 +-
+ src/components/i18n.tsx                 |  20 --
+ src/components/section-tabs.tsx         |  20 ++
+ src/lib/notification-target.ts          |  13 ++
+ src/lib/translations-data.json          |  14 +-
+ src/proxy.ts                            |   2 +-
+ 14 files changed, 480 insertions(+), 137 deletions(-)
+ create mode 100644 src/app/api/notifications/open/route.ts
+ create mode 100644 src/components/section-tabs.tsx
+ create mode 100644 src/lib/notification-target.ts
+
+diff --git a/src/app/api/notifications/open/route.ts b/src/app/api/notifications/open/route.ts
+new file mode 100644
+index 0000000..870ea5b
+--- /dev/null
++++ b/src/app/api/notifications/open/route.ts
+@@ -0,0 +1,18 @@
++import { NextResponse, type NextRequest } from "next/server";
++import { z } from "zod";
++import { supabase } from "@/lib/supabase/server";
++import { notificationTarget } from "@/lib/notification-target";
++// Opening a notification marks it as read and goes to the page it is about.
++export async function GET(request: NextRequest) {
++  const id = z.uuid().safeParse(request.nextUrl.searchParams.get("id"));
++  const db = await supabase();
++  let target = "/operations?view=notifications";
++  if (id.success) {
++    const { data } = await db.from("syndic_inbox").select("title,link").eq("id", id.data).maybeSingle();
++    if (data) {
++      target = notificationTarget(data.title, data.link);
++      await db.rpc("syndic_read_notification", { target: id.data });
++    }
++  }
++  return NextResponse.redirect(new URL(target, request.url));
++}
+diff --git a/src/app/app/layout.tsx b/src/app/app/layout.tsx
+index ef63563..3984739 100644
+--- a/src/app/app/layout.tsx
++++ b/src/app/app/layout.tsx
+@@ -2,10 +2,9 @@ import { I18nText } from "@/components/i18n";
+ import { AppFrame } from "@/components/app-frame";
+ import Link from "next/link";
+ import { redirect } from "next/navigation";
+-import { LayoutDashboard, Building2, Grid2X2, ShieldCheck } from "lucide-react";
+-import { Brand } from "@/components/brand";
+ import { signedIn } from "@/lib/access";
+ import { signOut } from "@/app/actions";
++import { SectionTabs } from "@/components/section-tabs";
+ import { daysLeft, planLabels } from "@/lib/plans";
+ export const dynamic = "force-dynamic";
+ export default async function AppLayout({
+@@ -47,27 +46,21 @@ export default async function AppLayout({
+     <AppFrame>
+       <div className="container">
+         <nav className="residence-tabs">
+-          <Link href="/app">
+-            <I18nText text="Vue d’ensemble" />
+-          </Link>
+-          <Link href="/app/residences">
+-            <I18nText text="Immeubles" />
+-          </Link>
+-          <Link href="/app/lots">
+-            <I18nText text="Appartements" />
+-          </Link>
+-          <Link href="/app/communaute">
+-            <I18nText text="Habitants" />
+-          </Link>
+-          <Link href="/abonnement">
+-            <I18nText text="Abonnement" />
+-          </Link>
++          <SectionTabs
++            items={[
++              { href: "/app", label: "Vue d’ensemble", exact: true },
++              { href: "/app/residences", label: "Immeubles" },
++              { href: "/app/lots", label: "Appartements" },
++              { href: "/app/communaute", label: "Habitants" },
++              { href: "/abonnement", label: "Abonnement" },
++            ]}
++          />
+           {isAdmin === true && (
+             <Link href="/admin">
+               <I18nText text="Administration" />
+             </Link>
+           )}
+-          <form action={signOut}>
++          <form action={signOut} className="tabs-signout">
+             <button className="text-link">
+               <I18nText text="Déconnexion" />
+             </button>
+diff --git a/src/app/app/page.tsx b/src/app/app/page.tsx
+index 61a29b1..d809605 100644
+--- a/src/app/app/page.tsx
++++ b/src/app/app/page.tsx
+@@ -1,79 +1,128 @@
+ import { I18nText } from "@/components/i18n";
+ import Link from "next/link";
+-import { Building2, Grid2X2, Users } from "lucide-react";
++import { Building2, ChevronRight, Clock3, CreditCard, Grid2X2, MessageCircle, Plus, Users, Wallet } from "lucide-react";
+ import { workspace } from "@/lib/data";
+-
++import { loadExpenses } from "@/lib/expenses";
++import { signedIn } from "@/lib/access";
++import { intlLocale as getIntlLocale } from "@/lib/locale-server";
+ import { Notice } from "@/components/notice";
+-export default async function Page({
+-  searchParams,
+-}: {
+-  searchParams: Promise<{ message?: string }>;
+-}) {
+-  const data = await workspace();
++export default async function Page({ searchParams }: { searchParams: Promise<{ message?: string }> }) {
++  const locale = await getIntlLocale();
++  const { db, user } = await signedIn();
++  const [data, board] = await Promise.all([workspace(), loadExpenses(db)]);
++  const managed = board.expenses.filter((e) => e.can_manage);
++  const shares = managed.flatMap((e) => e.shares);
++  const due = shares.reduce((s, x) => s + Math.max(x.amount - x.paid, 0), 0);
++  const toConfirm = shares.reduce((s, x) => s + x.claims.filter((c) => c.status === "pending").length, 0);
++  const residents = new Set(Object.values(board.unitNames).flat()).size;
++  const mad = (cents: number) =>
++    new Intl.NumberFormat(locale, { style: "currency", currency: "MAD", maximumFractionDigits: 0 }).format(cents / 100);
++  const firstName = typeof user.user_metadata?.first_name === "string" ? user.user_metadata.first_name : "";
++  const stats = [
++    { icon: Building2, label: "Immeubles", value: String(data.residences.length), tone: "green" },
++    { icon: Grid2X2, label: "Appartements", value: String(data.units.length), tone: "blue" },
++    { icon: Users, label: "Habitants", value: String(residents), tone: "violet" },
++    { icon: Wallet, label: "Reste à encaisser", value: mad(due), tone: "amber" },
++  ];
++  const actions = [
++    { href: "/operations?view=expenses#nouvelle-depense", icon: Plus, label: "Nouvelle dépense", note: "Eau, électricité, sécurité…" },
++    { href: "/operations?view=expenses", icon: Wallet, label: "Qui doit quoi ?", note: "Règlements et relances" },
++    { href: "/discussion", icon: MessageCircle, label: "Discussion", note: "Annonces, photos, sondages" },
++    { href: "/abonnement", icon: CreditCard, label: "Mon abonnement", note: "Plan et paiements" },
++  ];
+   return (
+     <>
+-      <div className="page-heading">
++      <div className="dash-hero">
+         <div>
+           <span className="eyebrow">
+             <I18nText text="Votre espace de gestion" />
+           </span>
+           <h1>
+-            <I18nText text="Vue d’ensemble" />
++            <I18nText text="Bonjour" />
++            {firstName ? ` ${firstName}` : ""} 👋
+           </h1>
+           <p>
+-            <I18nText text="Vos copropriétés, au même endroit." />
++            <I18nText text="Voici l’essentiel de vos copropriétés aujourd’hui." />
+           </p>
+         </div>
+         <Link href="/app/residences" className="button primary">
+-          <I18nText text="Ajouter une résidence" />
++          <Plus size={17} /> <I18nText text="Ajouter un immeuble" />
+         </Link>
+       </div>
+       <Notice error={data.error} message={(await searchParams).message} />
+-      <div className="stats">
+-        {[
+-          [Users, "Organisations", data.organizations.length],
+-          [Building2, "Résidences", data.residences.length],
+-          [Grid2X2, "Lots", data.units.length],
+-        ].map(([Icon, label, count]) => {
+-          const I = Icon as typeof Users;
+-          return (
+-            <div className="card" key={String(label)}>
+-              <I size={22} />
+-              <p style={{ margin: "12px 0 0" }}>
+-                <I18nText text={String(String(label))} />
++      {toConfirm > 0 && (
++        <Link href="/operations?view=expenses" className="dash-alert">
++          <Clock3 size={18} />
++          <span>
++            <strong>{toConfirm}</strong> <I18nText text="règlement(s) d’habitants à confirmer" />
++          </span>
++          <ChevronRight size={18} />
++        </Link>
++      )}
++      <div className="dash-stats">
++        {stats.map(({ icon: Icon, label, value, tone }) => (
++          <div className={"card dash-stat " + tone} key={label}>
++            <span className="dash-icon">
++              <Icon size={20} />
++            </span>
++            <div>
++              <p>
++                <I18nText text={label} />
+               </p>
+-              <div className="stat-number">
+-                {data.error ? "—" : String(count)}
+-              </div>
++              <strong>{data.error ? "—" : value}</strong>
+             </div>
+-          );
+-        })}
++          </div>
++        ))}
+       </div>
+-      <div className="split">
++      <div className="dash-grid">
+         <section className="card">
+-          <h2>
+-            <I18nText text="Mes immeubles" />
+-          </h2>
+-          <p>
+-            <I18nText text="Retrouvez les copropriétés de vos organisations." />
+-          </p>
++          <div className="dash-section-head">
++            <h2>
++              <I18nText text="Mes immeubles" />
++            </h2>
++            <Link href="/app/residences" className="text-link small">
++              <I18nText text="Tout voir" />
++            </Link>
++          </div>
+           {data.residences.length ? (
+-            data.residences.map((r) => (
+-              <div className="list-row" key={r.id}>
+-                <div>
+-                  <strong>{r.name}</strong>
+-                  <p className="small">
+-                    {r.city} · {r.address}
+-                  </p>
+-                </div>
+-                <Link className="button primary" href={`/app/residences/${r.id}`}>
+-                  <I18nText text="Gérer cet immeuble" />
+-                </Link>
+-              </div>
+-            ))
++            <div className="dash-buildings">
++              {data.residences.map((r) => {
++                const units = data.units.filter((u) => u.residence_id === r.id).length;
++                const left = managed
++                  .filter((e) => e.residence_id === r.id)
++                  .flatMap((e) => e.shares)
++                  .reduce((s, x) => s + Math.max(x.amount - x.paid, 0), 0);
++                return (
++                  <Link key={r.id} href={`/app/residences/${r.id}`} className="dash-building">
++                    <span className="dash-icon green">
++                      <Building2 size={20} />
++                    </span>
++                    <span className="dash-building-text">
++                      <strong>{r.name}</strong>
++                      <small>
++                        {r.city} · {units} <I18nText text="appartement(s)" />
++                        {left > 0 && (
++                          <>
++                            {" · "}
++                            <I18nText text="reste" /> {mad(left)}
++                          </>
++                        )}
++                      </small>
++                    </span>
++                    <ChevronRight size={18} />
++                  </Link>
++                );
++              })}
++            </div>
+           ) : (
+-            <div className="empty">
+-              <I18nText text="Aucune résidence pour le moment. Votre organisation doit être attribuée par l’administration ; ensuite, ajoutez votre première résidence." />
++            <div className="empty-state">
++              <Building2 size={34} />
++              <p>
++                <I18nText text="Ajoutez votre premier immeuble pour inviter vos habitants et partager les dépenses." />
++              </p>
++              <Link href="/app/residences" className="button primary">
++                <I18nText text="Ajouter un immeuble" />
++              </Link>
+             </div>
+           )}
+         </section>
+@@ -81,25 +130,22 @@ export default async function Page({
+           <h2>
+             <I18nText text="Actions rapides" />
+           </h2>
+-          <p>
+-            <I18nText text="Votre organisation est attribuée par l’administration." />
+-          </p>
+-          <div className="list">
+-            <Link href="/app/residences" className="button outline">
+-              <I18nText text="Ajouter un immeuble" />
+-            </Link>
+-            <Link href="/abonnement" className="button outline">
+-              <I18nText text="Mon abonnement" />
+-            </Link>
+-            <Link href="/app/communaute" className="button outline">
+-              <I18nText text="Gérer les habitants" />
+-            </Link>
+-            <Link href="/operations" className="button outline">
+-              <I18nText text="Finances et messages" />
+-            </Link>
+-            <Link href="/incidents" className="button outline">
+-              <I18nText text="Suivre les incidents" />
+-            </Link>
++          <div className="dash-actions">
++            {actions.map(({ href, icon: Icon, label, note }) => (
++              <Link key={href} href={href} className="dash-action">
++                <span className="dash-icon green">
++                  <Icon size={18} />
++                </span>
++                <span>
++                  <strong>
++                    <I18nText text={label} />
++                  </strong>
++                  <small>
++                    <I18nText text={note} />
++                  </small>
++                </span>
++              </Link>
++            ))}
+           </div>
+         </section>
+       </div>
+diff --git a/src/app/globals.css b/src/app/globals.css
+index 95f1247..c3a7ed7 100644
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -1,8 +1,8 @@
+ @import "tailwindcss";
+ .global-language {
+   position: fixed;
+-  inset-inline-end: 18px;
+-  bottom: 110px;
++  inset-inline-end: 16px;
++  top: 14px;
+   z-index: 60;
+ }
+ .language-picker select {
+@@ -382,11 +382,8 @@
+     gap: 6px;
+   }
+   .global-language {
+-    inset-inline-end: 12px;
+-    bottom: 102px;
+-  }
+-  body:has(.landing) .global-language {
+-    bottom: 22px;
++    inset-inline-end: 10px;
++    top: 10px;
+   }
+ }
+ @media (prefers-reduced-motion: reduce) {
+@@ -785,11 +782,16 @@ section[id] {
+   background: white;
+ }
+ :root {
+-  --ink: #101e35;
+-  --muted: #64748b;
+-  --line: #e5eaf1;
+-  --primary: #2563eb;
+-  --background: #f6f8fc;
++  --ink: #12231d;
++  --muted: #5f6f68;
++  --line: #e2e9e5;
++  --primary: #147d63;
++  --primary-strong: #0f5f4b;
++  --primary-soft: #e7f6ef;
++  --accent: #34d399;
++  --background: #f5f8f6;
++  --radius: 18px;
++  --shadow: 0 1px 2px rgba(18, 35, 29, 0.04), 0 8px 24px rgba(18, 35, 29, 0.06);
+ }
+ * {
+   box-sizing: border-box;
+@@ -3083,3 +3085,261 @@ body:has(.header-lang) .global-language {
+ .unit-pick.no-unit {
+   border-style: dashed;
+ }
++.notif-link {
++  flex: 1;
++  min-width: 0;
++  color: inherit;
++  text-decoration: none;
++}
++.notif-link:hover strong {
++  text-decoration: underline;
++}
++
++/* ===== Design refresh: one brand colour, softer surfaces ===== */
++body {
++  background: var(--background);
++  color: var(--ink);
++  -webkit-font-smoothing: antialiased;
++}
++.card {
++  border-radius: var(--radius);
++  border-color: var(--line);
++  box-shadow: var(--shadow);
++}
++.button {
++  border-radius: 12px;
++  transition: background 0.15s, border-color 0.15s, transform 0.1s, box-shadow 0.15s;
++}
++.button:active {
++  transform: translateY(1px);
++}
++.button.primary,
++.primary {
++  background: var(--primary);
++  color: #fff;
++  box-shadow: 0 1px 2px rgba(15, 95, 75, 0.25);
++}
++.button.primary:hover {
++  background: var(--primary-strong);
++  filter: none;
++}
++.button.outline:hover {
++  border-color: #b7dccb;
++  background: #f7fbf9;
++  filter: none;
++}
++.eyebrow {
++  color: var(--primary);
++}
++.text-link {
++  color: var(--primary);
++}
++.brand-dot {
++  color: var(--accent);
++}
++.page-heading h1 {
++  letter-spacing: -0.8px;
++}
++.notice {
++  border-radius: 14px;
++}
++input,
++select,
++textarea {
++  accent-color: var(--primary);
++}
++.form input:focus,
++.form select:focus,
++.form textarea:focus {
++  outline: 2px solid #147d6340;
++  border-color: var(--primary);
++}
++/* Section tabs of the syndic space */
++.residence-tabs a {
++  padding: 8px 14px;
++  border-radius: 999px;
++  color: var(--muted);
++  font-weight: 600;
++  white-space: nowrap;
++}
++.residence-tabs a:hover {
++  background: #eef4f1;
++  color: var(--ink);
++}
++.residence-tabs a.selected,
++.residence-tabs a[aria-current="page"] {
++  background: var(--primary);
++  color: #fff;
++  text-decoration: none;
++}
++.tabs-signout {
++  margin-inline-start: auto;
++}
++/* Syndic dashboard */
++.dash-hero {
++  display: flex;
++  justify-content: space-between;
++  align-items: flex-end;
++  gap: 16px;
++  flex-wrap: wrap;
++  margin-bottom: 18px;
++}
++.dash-hero h1 {
++  margin: 6px 0 4px;
++  font-size: clamp(26px, 4vw, 34px);
++  letter-spacing: -0.8px;
++}
++.dash-hero p {
++  margin: 0;
++  color: var(--muted);
++}
++.dash-alert {
++  display: flex;
++  align-items: center;
++  gap: 10px;
++  padding: 12px 16px;
++  border-radius: 14px;
++  background: #fef6e0;
++  border: 1px solid #f6d98f;
++  color: #7a4c00;
++  margin-bottom: 16px;
++  text-decoration: none;
++}
++.dash-alert span {
++  flex: 1;
++}
++.dash-stats {
++  display: grid;
++  grid-template-columns: repeat(4, minmax(0, 1fr));
++  gap: 14px;
++  margin-bottom: 18px;
++}
++.dash-stat {
++  display: flex;
++  align-items: center;
++  gap: 14px;
++  padding: 18px;
++}
++.dash-stat p {
++  margin: 0;
++  font-size: 13px;
++  color: var(--muted);
++}
++.dash-stat strong {
++  font-size: 22px;
++  letter-spacing: -0.5px;
++}
++.dash-icon {
++  width: 42px;
++  height: 42px;
++  flex: 0 0 42px;
++  border-radius: 12px;
++  display: grid;
++  place-items: center;
++  background: var(--primary-soft);
++  color: var(--primary);
++}
++.card .dash-icon svg {
++  color: inherit;
++}
++.dash-stat.blue .dash-icon { background: #e8f1fd; color: #1d4ed8; }
++.dash-stat.violet .dash-icon { background: #f1ecfd; color: #6d28d9; }
++.dash-stat.amber .dash-icon { background: #fef3c7; color: #b45309; }
++.dash-grid {
++  display: grid;
++  grid-template-columns: 1.4fr 1fr;
++  gap: 18px;
++  margin-bottom: 18px;
++}
++.dash-section-head {
++  display: flex;
++  justify-content: space-between;
++  align-items: center;
++}
++.dash-buildings,
++.dash-actions {
++  display: grid;
++  gap: 8px;
++  margin-top: 6px;
++}
++.dash-building,
++.dash-action {
++  display: flex;
++  align-items: center;
++  gap: 12px;
++  padding: 12px;
++  border-radius: 14px;
++  border: 1px solid var(--line);
++  color: var(--ink);
++  text-decoration: none;
++  transition: border-color 0.15s, background 0.15s;
++}
++.dash-building:hover,
++.dash-action:hover {
++  border-color: #b7dccb;
++  background: #f7fbf9;
++}
++.dash-building-text,
++.dash-action > span:last-child {
++  flex: 1;
++  min-width: 0;
++  display: grid;
++}
++.dash-building small,
++.dash-action small {
++  color: var(--muted);
++  font-size: 13px;
++}
++.card .dash-building > svg {
++  color: var(--muted);
++}
++.empty-state {
++  display: grid;
++  justify-items: center;
++  text-align: center;
++  gap: 10px;
++  padding: 24px 8px;
++  color: var(--muted);
++}
++.card .empty-state > svg {
++  color: #a3b8ae;
++}
++@media (max-width: 900px) {
++  .dash-stats {
++    grid-template-columns: repeat(2, minmax(0, 1fr));
++  }
++  .dash-grid {
++    grid-template-columns: 1fr;
++  }
++}
++@media (max-width: 420px) {
++  .dash-stat {
++    padding: 14px;
++    gap: 10px;
++  }
++  .dash-stat strong {
++    font-size: 18px;
++  }
++}
++@media (max-width: 800px) {
++  /* Keep the main button in the home page menu on phones */
++  .landing-nav nav > a.primary {
++    display: inline-flex;
++  }
++  .landing-nav nav {
++    gap: 8px;
++  }
++  /* The floating card covered the hero labels on small screens */
++  .hero-floating {
++    display: none;
++  }
++  .landing-hero {
++    min-height: 600px;
++  }
++}
++@media (max-width: 800px) {
++  .landing-nav nav > a.primary {
++    white-space: nowrap;
++    padding: 10px 14px;
++  }
++}
+diff --git a/src/app/layout.tsx b/src/app/layout.tsx
+index 452c6ff..a7bcb52 100644
+--- a/src/app/layout.tsx
++++ b/src/app/layout.tsx
+@@ -2,7 +2,8 @@ import type { Metadata } from "next";
+ import "./globals.css";
+ import { cookies } from "next/headers";
+ import { validLocale } from "@/lib/locale";
+-import { LanguageProvider, LanguagePicker } from "@/components/i18n";
++import { LanguageProvider } from "@/components/i18n";
++import { LanguageMenu } from "@/components/language-menu";
+ import { NavigationProgress } from "@/components/navigation-progress";
+ export const metadata: Metadata = {
+   title: {
+@@ -24,7 +25,7 @@ export default async function RootLayout({
+         <NavigationProgress />
+         <LanguageProvider locale={locale}>
+           <div className="global-language">
+-            <LanguagePicker />
++            <LanguageMenu />
+           </div>
+           {children}
+         </LanguageProvider>
+diff --git a/src/app/operations/page.tsx b/src/app/operations/page.tsx
+index 27f094f..ad8d25f 100644
+--- a/src/app/operations/page.tsx
++++ b/src/app/operations/page.tsx
+@@ -6,7 +6,6 @@ import Link from "next/link";
+ import { signedIn } from "@/lib/access";
+ import { Notice } from "@/components/notice";
+ import { Submit } from "@/components/submit";
+-import { Brand } from "@/components/brand";
+ import { operate } from "./actions";
+ import { ExpenseBoard } from "@/components/expense-board";
+ import { loadExpenses } from "@/lib/expenses";
+@@ -448,14 +447,14 @@ export default async function Page({
+             {inbox.data?.length ? (
+               inbox.data.map((n) => (
+                 <article className={"list-row" + (n.read_at ? "" : " unread")} key={n.id}>
+-                  <div>
++                  <a href={`/api/notifications/open?id=${n.id}`} className="notif-link">
+                     <strong><SystemNotification text={n.title} /></strong>
+                     <p className="small">
+                       {new Date(n.created_at).toLocaleString(intlLocale, {
+                         timeZone: "Africa/Casablanca",
+                       })}
+                     </p>
+-                  </div>
++                  </a>
+                   {!n.read_at && (
+                     <form action={operate}>
+                       <LocalizedInput type="hidden" name="task" value="read" />
+diff --git a/src/app/page.tsx b/src/app/page.tsx
+index c06f31e..264279d 100644
+--- a/src/app/page.tsx
++++ b/src/app/page.tsx
+@@ -15,6 +15,7 @@ import {
+ } from "lucide-react";
+ import { plans, contact } from "@/lib/plans";
+ import { Brand } from "@/components/brand";
++import { LanguageMenu } from "@/components/language-menu";
+ import { currentLocale } from "@/lib/locale-server";
+ export default async function Home() {
+   const locale = await currentLocale();
+@@ -35,6 +36,7 @@ export default async function Home() {
+           <Link href="/inscription">
+             <I18nText text="Créer un compte" />
+           </Link>
++          <LanguageMenu className="header-lang" />
+           <Link href="/connexion" className="button primary">
+             <I18nText text="Mon espace" />
+             <ArrowUpRight size={17} />
+diff --git a/src/app/rejoindre/[token]/actions.ts b/src/app/rejoindre/[token]/actions.ts
+index 5521118..0ff6ec8 100644
+--- a/src/app/rejoindre/[token]/actions.ts
++++ b/src/app/rejoindre/[token]/actions.ts
+@@ -28,17 +28,16 @@ export async function joinResidence(form: FormData) {
+   const attempt = randomUUID();
+   let created = false;
+   let success = false;
++  // redirect() throws: it must not run inside the try/catch below, or the message is lost.
++  let reservedOk = false;
++  try {
++    const { data: reserved, error } = await provisionClient().rpc("syndic_reserve_join_link", { token: v.token, attempt });
++    reservedOk = !error && reserved === true;
++  } catch {}
++  if (!reservedOk)
++    redirect(back + "?message=" + encodeURIComponent("Invitation indisponible ou en cours d’utilisation."));
+   try {
+     const service = provisionClient();
+-    const { data: reserved, error } = await service.rpc(
+-      "syndic_reserve_join_link",
+-      { token: v.token, attempt },
+-    );
+-    if (error || reserved !== true)
+-      redirect(
+-        back +
+-          "?message=Invitation%20indisponible%20ou%20en%20cours%20d’utilisation.",
+-      );
+     const result = await service.auth.admin.createUser({
+       email: v.email,
+       password: v.password,
+diff --git a/src/components/brand.tsx b/src/components/brand.tsx
+index 23c8bcc..741dbfa 100644
+--- a/src/components/brand.tsx
++++ b/src/components/brand.tsx
+@@ -4,7 +4,7 @@ export function Brand() {
+   return (
+     <Link href="/" className="brand">
+       <Building2 aria-hidden="true" />
+-      SyndiConnect<span style={{ color: "#2563eb" }}>.</span>
++      SyndiConnect<span className="brand-dot">.</span>
+     </Link>
+   );
+ }
+diff --git a/src/components/i18n.tsx b/src/components/i18n.tsx
+index d339ef0..d4d6adc 100644
+--- a/src/components/i18n.tsx
++++ b/src/components/i18n.tsx
+@@ -30,23 +30,3 @@ export function SystemNotification({ text }: { text: string }) {
+   const prefix = prefixes.find((value) => text.startsWith(value));
+   return <>{prefix ? translate(prefix.trim(), locale) + " " + text.slice(prefix.length) : translate(text, locale)}</>;
+ }
+-export function LanguagePicker() {
+-  const locale = useLocale();
+-  return (
+-    <label className="language-picker">
+-      <span className="sr-only">Language</span>
+-      <select
+-        aria-label="Language"
+-        value={locale}
+-        onChange={(event) => {
+-          document.cookie = `syndic_locale=${event.target.value};path=/;max-age=31536000;samesite=lax;secure`;
+-          window.location.reload();
+-        }}
+-      >
+-        <option value="fr">FR · Français</option>
+-        <option value="ar">ع · العربية</option>
+-        <option value="en">EN · English</option>
+-      </select>
+-    </label>
+-  );
+-}
+diff --git a/src/components/section-tabs.tsx b/src/components/section-tabs.tsx
+new file mode 100644
+index 0000000..461e7ed
+--- /dev/null
++++ b/src/components/section-tabs.tsx
+@@ -0,0 +1,20 @@
++"use client";
++import Link from "next/link";
++import { usePathname } from "next/navigation";
++import { I18nText } from "@/components/i18n";
++// Section links of a space; the current one is highlighted.
++export function SectionTabs({ items }: { items: { href: string; label: string; exact?: boolean }[] }) {
++  const path = usePathname();
++  return (
++    <>
++      {items.map((item) => {
++        const active = item.exact ? path === item.href : path === item.href || path.startsWith(item.href + "/");
++        return (
++          <Link key={item.href} href={item.href} aria-current={active ? "page" : undefined}>
++            <I18nText text={item.label} />
++          </Link>
++        );
++      })}
++    </>
++  );
++}
+diff --git a/src/lib/notification-target.ts b/src/lib/notification-target.ts
+new file mode 100644
+index 0000000..1fb135a
+--- /dev/null
++++ b/src/lib/notification-target.ts
+@@ -0,0 +1,13 @@
++// Page to open for a notification, from its title and stored link.
++export function notificationTarget(title: string, link: string) {
++  const t = title.toLowerCase();
++  if (t.startsWith("nouvelle réponse") || t.startsWith("nouveau sondage")) return "/discussion";
++  if (t.includes("cotisation") || t.includes("règlement") || t.startsWith("rappel")) return "/operations?view=expenses";
++  if (t.includes("réunion")) return "/operations?view=meetings";
++  if (t.includes("message")) return "/operations?view=messages";
++  if (t.includes("incident")) return "/incidents";
++  if (t.includes("paiement") || t.includes("abonnement") || t.includes("compte syndic est approuvé")) return "/abonnement";
++  if (link === "/app/abonnement") return "/abonnement";
++  if (["/resident", "/operations", "/app/communaute", "/admin"].includes(link)) return link;
++  return "/operations?view=notifications";
++}
+diff --git a/src/lib/translations-data.json b/src/lib/translations-data.json
+index d6ab64b..9df634f 100644
+--- a/src/lib/translations-data.json
++++ b/src/lib/translations-data.json
+@@ -937,5 +937,17 @@
+   "Corrigez le champ suivant :": { "ar": "صحح الحقل التالي:", "en": "Please fix the following field:" },
+   "10 chiffres, par exemple 0612345678": { "ar": "10 أرقام، مثلاً 0612345678", "en": "10 digits, for example 0612345678" },
+   "sans appartement": { "ar": "بدون شقة", "en": "no apartment" },
+-  "Un habitant sans appartement reçoit automatiquement un appartement à son nom quand vous le cochez.": { "ar": "الساكن بدون شقة يحصل تلقائياً على شقة باسمه عند تحديده.", "en": "A resident without an apartment automatically gets one in their name when you tick them." }
++  "Un habitant sans appartement reçoit automatiquement un appartement à son nom quand vous le cochez.": { "ar": "الساكن بدون شقة يحصل تلقائياً على شقة باسمه عند تحديده.", "en": "A resident without an apartment automatically gets one in their name when you tick them." },
++  "Bonjour": { "ar": "مرحباً", "en": "Hello" },
++  "Voici l’essentiel de vos copropriétés aujourd’hui.": { "ar": "إليك أهم ما يخص إقاماتك اليوم.", "en": "Here is the essentials of your buildings today." },
++  "règlement(s) d’habitants à confirmer": { "ar": "أداء(ات) سكان في انتظار التأكيد", "en": "resident payment(s) to confirm" },
++  "Reste à encaisser": { "ar": "الباقي للتحصيل", "en": "Left to collect" },
++  "Tout voir": { "ar": "عرض الكل", "en": "See all" },
++  "reste": { "ar": "الباقي", "en": "left" },
++  "Ajoutez votre premier immeuble pour inviter vos habitants et partager les dépenses.": { "ar": "أضف عمارتك الأولى لدعوة السكان ومشاركة المصاريف.", "en": "Add your first building to invite residents and share expenses." },
++  "Nouvelle dépense": { "ar": "مصروف جديد", "en": "New expense" },
++  "Eau, électricité, sécurité…": { "ar": "الماء، الكهرباء، الأمن…", "en": "Water, electricity, security…" },
++  "Règlements et relances": { "ar": "الأداءات والتذكيرات", "en": "Payments and reminders" },
++  "Annonces, photos, sondages": { "ar": "إعلانات، صور، استطلاعات", "en": "Announcements, photos, polls" },
++  "Plan et paiements": { "ar": "الباقة والمدفوعات", "en": "Plan and payments" }
+ }
+diff --git a/src/proxy.ts b/src/proxy.ts
+index 546aa5d..db59aef 100644
+--- a/src/proxy.ts
++++ b/src/proxy.ts
+@@ -32,7 +32,7 @@ export const config = {
+     "/incidents/:path*",
+     "/operations/:path*",
+     "/discussion/:path*",
+-    "/api/notifications",
++    "/api/notifications/:path*",
+     "/app/:path*",
+     "/admin/:path*",
+     "/resident/:path*",
+-- 
+2.43.0
+
